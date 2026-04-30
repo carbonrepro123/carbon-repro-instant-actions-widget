@@ -1397,6 +1397,7 @@
 
     addChatMessage('user', message);
     elements.chatInput.value = '';
+    elements.chatInput.style.height = 'auto';
     chatRequestInFlight = true;
     setChatLoading(true);
 
@@ -1558,6 +1559,10 @@
           sendChatMessage();
         }
       });
+      elements.chatInput.addEventListener('input', function () {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      });
     }
 
     bindAction(document.querySelector('[data-watch-action="chat"]'), showChat);
@@ -1608,13 +1613,7 @@
     });
   });
 
-  window.addEventListener('resize', function () {
-    var elements = getElements();
-    if (window.innerWidth <= 768 &&
-      ((elements.menu && elements.menu.classList.contains('active')) ||
-       (elements.form && elements.form.classList.contains('active')) ||
-       (elements.chat && elements.chat.classList.contains('active')))) {
-      closeWidget();
-    }
-  });
+  /* Resize listener removed: closing panels on resize broke mobile UX because
+     the virtual keyboard triggers a resize event when it opens, which would
+     immediately dismiss the chat panel after the user tapped the input. */
 }());

@@ -765,18 +765,23 @@ final class Carbon_Repro_Instant_Actions_Widget
                         </div>
                         <div class="watch-chat-composer">
                             <div class="watch-chat-input-wrap">
-                                <textarea id="watchChatInput" class="watch-chat-input" rows="2" placeholder="<?php esc_attr_e('Type your message...', 'carbon-repro-widget'); ?>"></textarea>
-                                <div class="watch-chat-upload-row">
-                                    <label class="watch-chat-upload-btn" for="watchChatUpload" aria-label="<?php esc_attr_e('Upload Photo', 'carbon-repro-widget'); ?>">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                            <path d="M21.44 11.05l-8.49 8.49a5.5 5.5 0 0 1-7.78-7.78l8.49-8.49a3.5 3.5 0 0 1 4.95 4.95l-8.5 8.49a1.5 1.5 0 0 1-2.12-2.12l7.43-7.42"></path>
-                                        </svg>
-                                    </label>
-                                    <input type="file" id="watchChatUpload" class="watch-chat-upload-input" accept="image/png,image/jpeg,image/webp,image/gif" />
-                                    <div class="watch-chat-upload-status" id="watchChatUploadStatus" aria-live="polite"></div>
-                                </div>
+                                <textarea id="watchChatInput" class="watch-chat-input" rows="1" placeholder="<?php esc_attr_e('Type your message...', 'carbon-repro-widget'); ?>"></textarea>
                             </div>
-                            <button type="submit" class="watch-chat-send" id="watchChatSend"><?php esc_html_e('Send', 'carbon-repro-widget'); ?></button>
+                            <div class="watch-chat-composer-actions">
+                                <label class="watch-chat-upload-btn" for="watchChatUpload" aria-label="<?php esc_attr_e('Upload Photo', 'carbon-repro-widget'); ?>">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M21.44 11.05l-8.49 8.49a5.5 5.5 0 0 1-7.78-7.78l8.49-8.49a3.5 3.5 0 0 1 4.95 4.95l-8.5 8.49a1.5 1.5 0 0 1-2.12-2.12l7.43-7.42"></path>
+                                    </svg>
+                                </label>
+                                <input type="file" id="watchChatUpload" class="watch-chat-upload-input" accept="image/png,image/jpeg,image/webp,image/gif" />
+                                <div class="watch-chat-upload-status" id="watchChatUploadStatus" aria-live="polite"></div>
+                                <button type="submit" class="watch-chat-send" id="watchChatSend" aria-label="<?php esc_attr_e('Send message', 'carbon-repro-widget'); ?>">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>

@@ -1,3 +1,11 @@
+/* ==========================================================================
+   Carbon Repro Instant Actions Widget — v3.1.0
+   Design: Intercom-style, mobile-first, SVG icons, CSS custom properties
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Hidden-state guard (applied immediately via JS before DOM is ready)
+   -------------------------------------------------------------------------- */
 html[data-widget-hidden="true"] .watch-menu,
 html[data-widget-hidden="true"] .watch-form-popup,
 html[data-widget-hidden="true"] .watch-chat-popup {
@@ -9,66 +17,53 @@ html[data-widget-hidden="true"] .watch-chat-popup {
   top: -9999px !important;
 }
 
-@keyframes watch-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
-@keyframes watch-pulse {
-  0%, 100% { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15); }
-  50% { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22); }
-}
-
+/* --------------------------------------------------------------------------
+   2. Keyframe animations
+   -------------------------------------------------------------------------- */
 @keyframes watch-slide-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 
 @keyframes watch-action-slide {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0);     }
 }
 
-
-
-.lqd-back-to-top.is-visible {
-  z-index: 99990 !important;
-}
-
-body:has(.lqd-back-to-top.is-visible) #watchWidget {
-  bottom: calc(24px + 56px + 16px);
-}
-
+/* --------------------------------------------------------------------------
+   3. Widget root & CSS custom properties
+   -------------------------------------------------------------------------- */
 #watchWidget {
-  --watch-primary: #126A59;
-  --watch-secondary: #0D4E41;
-  --watch-accent: #B88E52;
-  --watch-panel-bg: #ffffff;
-  --watch-surface: #F9F9F9;
-  --watch-text: #111111;
-  --watch-button-text: #ffffff;
-  --watch-launcher-text: #126A59;
+  /* Default color tokens — overridden by inline style from PHP */
+  --watch-primary:      #126A59;
+  --watch-secondary:    #0D4E41;
+  --watch-accent:       #B88E52;
+  --watch-panel-bg:     #ffffff;
+  --watch-surface:      #F9F9F9;
+  --watch-text:         #111111;
+  --watch-button-text:  #ffffff;
+  --watch-launcher-text:#126A59;
+
   position: fixed;
   bottom: 24px;
-  right: 24px;
+  right:  24px;
   z-index: 99999;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   pointer-events: none;
   transition: bottom 0.3s ease;
 }
 
+/* Back-to-top coexistence */
+.lqd-back-to-top.is-visible {
+  z-index: 99990 !important;
+}
+body:has(.lqd-back-to-top.is-visible) #watchWidget {
+  bottom: calc(24px + 56px + 16px);
+}
+
+/* --------------------------------------------------------------------------
+   4. Pointer-events unlock for interactive children
+   -------------------------------------------------------------------------- */
 .watch-button,
 .watch-launcher,
 .watch-menu,
@@ -78,6 +73,9 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   pointer-events: auto;
 }
 
+/* --------------------------------------------------------------------------
+   5. Launcher (button + label)
+   -------------------------------------------------------------------------- */
 .watch-launcher {
   display: flex;
   align-items: center;
@@ -93,7 +91,7 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   font-weight: 600;
   padding: 8px 14px;
   border-radius: 20px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 18px rgba(0,0,0,.08);
   white-space: nowrap;
   cursor: pointer;
   border: 1.5px solid var(--watch-primary);
@@ -102,9 +100,8 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   -webkit-tap-highlight-color: transparent;
   animation: watch-slide-in 0.5s ease-out;
 }
-
 .watch-label:hover {
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 6px 22px rgba(0,0,0,.10);
   transform: translateY(-2px);
   background: #f5f5f5;
 }
@@ -121,7 +118,7 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -131,13 +128,11 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   outline: none !important;
   text-decoration: none !important;
 }
-
 .watch-button:hover,
 #watchWidget .watch-button:hover {
   transform: translateY(-3px) scale(1.06);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 12px 28px rgba(0,0,0,.22);
 }
-
 .watch-button:active {
   transform: scale(0.94);
 }
@@ -173,14 +168,16 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   font-weight: 800;
   line-height: 22px;
   text-align: center;
-  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.35);
+  box-shadow: 0 6px 16px rgba(239,68,68,.35);
   display: none;
 }
-
 .watch-unread-badge.active {
   display: inline-block;
 }
 
+/* --------------------------------------------------------------------------
+   6. Toast notification
+   -------------------------------------------------------------------------- */
 .watch-toast {
   position: absolute;
   right: 0;
@@ -192,23 +189,25 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   color: #fff;
   font-size: 12px;
   line-height: 1.4;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.22);
+  box-shadow: 0 12px 30px rgba(15,23,42,.22);
   opacity: 0;
   transform: translateY(10px);
   pointer-events: none;
   transition: all 0.24s ease;
   z-index: 2;
 }
-
 .watch-toast.active {
   opacity: 1;
   transform: translateY(0);
 }
 
+/* --------------------------------------------------------------------------
+   7. Overlay
+   -------------------------------------------------------------------------- */
 #watchOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0,0,0,.2);
   backdrop-filter: blur(1.5px);
   -webkit-backdrop-filter: blur(1.5px);
   opacity: 0;
@@ -217,321 +216,25 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   transition: opacity 0.3s ease, visibility 0.3s ease;
   z-index: 99997;
 }
-
 #watchOverlay.active {
   opacity: 1;
   visibility: visible;
   pointer-events: auto !important;
 }
 
-.watch-menu {
-  position: fixed;
-  bottom: 100px;
-  right: 24px;
-  width: 360px;
-  max-height: 720px;
-  background: var(--watch-panel-bg);
-  border-radius: 18px;
-  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.12);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transform: translateY(16px) scale(0.97);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none !important;
-  transition: all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
-  z-index: 99998;
-}
-
-.watch-menu.active {
-  transform: translateY(0) scale(1);
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto !important;
-  animation: watch-slide-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.watch-menu-header,
-.watch-form-header {
-  background: linear-gradient(135deg, var(--watch-primary) 0%, var(--watch-secondary) 100%);
-  color: #fff;
-}
-
-.watch-menu-header {
-  padding: 18px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.watch-menu-title,
-.watch-form-title {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-}
-
-.watch-menu-title {
-  flex: 1;
-}
-
-.watch-menu-close-btn,
-.watch-form-back-btn,
-.watch-form-close-btn {
-  appearance: none !important;
-  background: rgba(255, 255, 255, 0.15) !important;
-  border: 0 !important;
-  color: #fff !important;
-  cursor: pointer;
-  border-radius: 50% !important;
-  width: 32px !important;
-  height: 32px !important;
-  min-width: 32px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 !important;
-  transition: all 0.2s;
-  flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
-  box-shadow: none !important;
-  overflow: hidden;
-}
-
-.watch-menu-close-btn:hover,
-.watch-form-back-btn:hover,
-.watch-form-close-btn:hover {
-  background: rgba(255, 255, 255, 0.28);
-}
-
-.watch-menu-close-btn:hover {
-  transform: rotate(180deg);
-}
-
-.watch-form-back-btn:hover {
-  transform: scale(1.1) translateX(-2px);
-}
-
-.watch-form-close-btn:hover {
-  transform: scale(1.1) rotate(90deg);
-}
-
-.watch-menu-close-btn svg,
-.watch-form-back-btn svg,
-.watch-form-close-btn svg {
-  width: 18px !important;
-  height: 18px !important;
-  display: block !important;
-  stroke: currentColor !important;
-  fill: none !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-.watch-menu-body {
-  padding: 24px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  flex: 1;
-  -webkit-overflow-scrolling: touch;
-}
-
-.watch-menu-action {
-  display: flex;
-  align-items: center;
-  padding: 22px 20px;
-  background: var(--watch-surface);
-  border-radius: 14px;
-  cursor: pointer;
-  border: 1.5px solid #e8e8e8;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  gap: 16px;
-  flex-shrink: 0;
-  min-height: 70px;
-  position: relative;
-  overflow: hidden;
-}
-
-.watch-menu-action::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.04), transparent);
-  transition: left 0.5s ease;
-}
-
-.watch-menu-action:hover::before {
-  left: 100%;
-}
-
-.watch-menu-action:hover {
-  border-color: var(--watch-primary);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
-  background: #fff;
-}
-
-.watch-menu-action:active {
-  transform: translateY(-1px);
-}
-
-.watch-action-1 {
-  animation: watch-action-slide 0.4s ease-out 0.1s both;
-}
-
-.watch-action-2 {
-  animation: watch-action-slide 0.4s ease-out 0.2s both;
-}
-
-.watch-action-3 {
-  animation: watch-action-slide 0.4s ease-out 0.3s both;
-}
-
-.watch-action-4 {
-  animation: watch-action-slide 0.4s ease-out 0.4s both;
-}
-
-.watch-action-icon {
-  width: 52px;
-  height: 52px;
-  min-width: 52px;
-  border-radius: 12px;
-  background: rgba(18, 106, 89, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--watch-primary);
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-}
-
-.watch-menu-action:hover .watch-action-icon {
-  transform: scale(1.08);
-  background: rgba(18, 106, 89, 0.14);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.watch-action-icon svg {
-  width: 28px;
-  height: 28px;
-  transition: transform 0.3s ease;
-}
-
-.watch-menu-action:hover .watch-action-icon svg {
-  transform: scale(1.15);
-}
-
-.watch-action-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.watch-action-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--watch-text);
-  line-height: 1.3;
-  transition: color 0.3s ease;
-}
-
-.watch-menu-action:hover .watch-action-title {
-  color: var(--watch-primary);
-}
-
-.watch-menu-footer {
-  padding: 14px 20px;
-  text-align: center;
-  border-top: 1px solid #ebebeb;
-  background: var(--watch-surface);
-  flex-shrink: 0;
-}
-
-.watch-footer-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.watch-footer-icon {
-  width: 16px;
-  height: 16px;
-  color: var(--watch-primary);
-  opacity: 0.7;
-  transition: all 0.3s ease;
-}
-
-.watch-menu-footer:hover .watch-footer-icon {
-  opacity: 1;
-  transform: scale(1.2);
-}
-
-.watch-menu-footer small {
-  font-size: 12px;
-  color: #7f8c8d;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-}
-
-.watch-menu-footer strong {
-  color: var(--watch-primary);
-  font-weight: 700;
-  transition: color 0.3s ease;
-}
-
-.watch-menu-footer:hover strong {
-  color: var(--watch-secondary);
-}
-
-.watch-form-popup {
-  position: fixed;
-  bottom: 100px;
-  right: 24px;
-  width: 380px;
-  max-height: 88vh;
-  background: var(--watch-panel-bg);
-  border-radius: 18px;
-  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.12);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transform: translateY(16px) scale(0.97);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none !important;
-  transition: all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
-  z-index: 99998;
-}
-
-.watch-form-popup.active {
-  transform: translateY(0) scale(1);
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto !important;
-  animation: watch-slide-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
+/* --------------------------------------------------------------------------
+   8. Shared panel base (menu + form + chat)
+   -------------------------------------------------------------------------- */
+.watch-menu,
+.watch-form-popup,
 .watch-chat-popup {
   position: fixed;
   bottom: 100px;
   right: 24px;
   width: 380px;
-  height: min(640px, 82vh);
   background: var(--watch-panel-bg);
   border-radius: 18px;
-  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 16px 50px rgba(0,0,0,.14);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -542,7 +245,8 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   transition: all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 99998;
 }
-
+.watch-menu.active,
+.watch-form-popup.active,
 .watch-chat-popup.active {
   transform: translateY(0) scale(1);
   opacity: 1;
@@ -551,6 +255,15 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   animation: watch-slide-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+.watch-menu     { max-height: 720px; }
+.watch-form-popup { max-height: 88vh; }
+.watch-chat-popup { height: min(640px, 82vh); }
+
+/* --------------------------------------------------------------------------
+   9. Shared panel header styles
+   -------------------------------------------------------------------------- */
+.watch-menu-header,
+.watch-form-header,
 .watch-chat-header {
   background: linear-gradient(135deg, var(--watch-primary) 0%, var(--watch-secondary) 100%);
   color: #fff;
@@ -561,28 +274,24 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   flex-shrink: 0;
 }
 
+.watch-menu-title,
+.watch-form-title,
 .watch-chat-title {
   flex: 1;
   font-size: 16px;
   font-weight: 700;
+  letter-spacing: 0.2px;
   text-align: left;
-  margin-right: 0;
 }
 
-.watch-brand-logo {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  object-fit: contain;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.14);
-  padding: 5px;
-}
-
+/* Header icon buttons (back / close) */
+.watch-menu-close-btn,
+.watch-form-back-btn,
+.watch-form-close-btn,
 .watch-chat-back-btn,
 .watch-chat-close-btn {
   appearance: none !important;
-  background: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255,255,255,.15) !important;
   border: 0 !important;
   color: #fff !important;
   cursor: pointer;
@@ -594,17 +303,21 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   align-items: center !important;
   justify-content: center !important;
   padding: 0 !important;
-  transition: all 0.2s;
+  transition: background 0.2s ease, transform 0.2s ease;
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
   box-shadow: none !important;
   overflow: hidden;
 }
+.watch-menu-close-btn:hover  { background: rgba(255,255,255,.28) !important; transform: rotate(180deg); }
+.watch-form-back-btn:hover   { background: rgba(255,255,255,.28) !important; transform: translateX(-2px) scale(1.1); }
+.watch-form-close-btn:hover  { background: rgba(255,255,255,.28) !important; transform: rotate(90deg) scale(1.1); }
+.watch-chat-back-btn:hover   { background: rgba(255,255,255,.28) !important; transform: translateX(-2px) scale(1.1); }
+.watch-chat-close-btn:hover  { background: rgba(255,255,255,.28) !important; transform: rotate(90deg) scale(1.1); }
 
-.watch-chat-back-btn:hover,
-.watch-chat-close-btn:hover {
-  background: rgba(255, 255, 255, 0.28);
-}
-
+.watch-menu-close-btn svg,
+.watch-form-back-btn svg,
+.watch-form-close-btn svg,
 .watch-chat-back-btn svg,
 .watch-chat-close-btn svg {
   width: 18px !important;
@@ -616,23 +329,194 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   opacity: 1 !important;
 }
 
-.watch-chat-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
+.watch-brand-logo {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255,255,255,.14);
+  padding: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   10. Menu body & action cards
+   -------------------------------------------------------------------------- */
+.watch-menu-body {
+  padding: 20px 14px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.watch-menu-action {
+  display: flex;
+  align-items: center;
+  padding: 20px 18px;
+  background: var(--watch-surface);
+  border-radius: 14px;
+  cursor: pointer;
+  border: 1.5px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  gap: 16px;
+  flex-shrink: 0;
+  min-height: 68px;
+  position: relative;
+  overflow: hidden;
+}
+.watch-menu-action::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,.03), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+}
+.watch-menu-action:hover::before  { transform: translateX(100%); }
+.watch-menu-action:hover {
+  border-color: var(--watch-primary);
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  transform: translateY(-2px);
+  background: #fff;
+}
+.watch-menu-action:active { transform: translateY(-1px); }
+
+.watch-action-1 { animation: watch-action-slide 0.4s ease-out 0.1s both; }
+.watch-action-2 { animation: watch-action-slide 0.4s ease-out 0.2s both; }
+.watch-action-3 { animation: watch-action-slide 0.4s ease-out 0.3s both; }
+.watch-action-4 { animation: watch-action-slide 0.4s ease-out 0.4s both; }
+
+.watch-action-icon {
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  border-radius: 12px;
+  background: rgba(18,106,89,.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--watch-primary);
+  flex-shrink: 0;
+  transition: all 0.28s ease;
+}
+.watch-menu-action:hover .watch-action-icon {
+  transform: scale(1.08);
+  background: rgba(18,106,89,.14);
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+.watch-action-icon svg {
+  width: 26px;
+  height: 26px;
+  transition: transform 0.28s ease;
+}
+.watch-menu-action:hover .watch-action-icon svg {
+  transform: scale(1.12);
+}
+
+.watch-action-text { flex: 1; min-width: 0; }
+.watch-action-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--watch-text);
+  line-height: 1.3;
+  transition: color 0.28s ease;
+}
+.watch-menu-action:hover .watch-action-title { color: var(--watch-primary); }
+
+/* --------------------------------------------------------------------------
+   11. Menu footer
+   -------------------------------------------------------------------------- */
+.watch-menu-footer {
+  padding: 14px 20px;
+  text-align: center;
+  border-top: 1px solid #ebebeb;
+  background: var(--watch-surface);
+  flex-shrink: 0;
+}
+.watch-footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.watch-footer-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--watch-primary);
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+.watch-menu-footer:hover .watch-footer-icon { opacity: 1; transform: scale(1.2); }
+.watch-menu-footer small {
+  font-size: 12px;
+  color: #7f8c8d;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+.watch-menu-footer strong {
+  color: var(--watch-primary);
+  font-weight: 700;
+  transition: color 0.3s ease;
+}
+.watch-menu-footer:hover strong { color: var(--watch-secondary); }
+
+/* --------------------------------------------------------------------------
+   12. Form popup
+   -------------------------------------------------------------------------- */
+.watch-form-body {
+  padding: 20px 18px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
   background: var(--watch-surface);
   -webkit-overflow-scrolling: touch;
 }
 
+.watch-form-fallback {
+  padding: 18px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #dbeceb;
+  color: #2c3e50;
+}
+
+#watchFormPopup .wpforms-container,
+#watchFormPopup .wpforms-form {
+  margin: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* --------------------------------------------------------------------------
+   13. Chat popup — body / messages
+   -------------------------------------------------------------------------- */
+.watch-chat-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--watch-surface);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* --------------------------------------------------------------------------
+   14. Chat intake (lead capture)
+   -------------------------------------------------------------------------- */
 .watch-chat-intake {
   flex: 1;
   display: none;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: 18px;
+  padding: 16px;
   overflow-y: auto;
   background: var(--watch-surface);
   -webkit-overflow-scrolling: touch;
@@ -640,20 +524,18 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
 
 .watch-chat-intake-card {
   width: 100%;
-  max-width: 100%;
   background: var(--watch-panel-bg);
   border: 1px solid #e8e8e8;
-  border-radius: 18px;
+  border-radius: 16px;
   padding: 18px;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 22px rgba(0,0,0,.06);
 }
-
 .watch-chat-intake-card h3 {
   margin: 0 0 8px;
-  font-size: 18px;
+  font-size: 17px;
   color: var(--watch-text);
+  font-weight: 700;
 }
-
 .watch-chat-intake-card p {
   margin: 0 0 14px;
   color: #667085;
@@ -661,43 +543,50 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   line-height: 1.5;
 }
 
-.watch-chat-intake-consents {
-  display: grid;
-  gap: 10px;
-  margin-top: 14px;
-  padding: 10px 12px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.watch-chat-intake-grid {
-  display: grid;
-  gap: 10px;
-}
+.watch-chat-intake-grid { display: grid; gap: 10px; }
 
 .watch-chat-intake-input {
   width: 100%;
   border: 1.5px solid #e0e0e0;
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 11px 14px;
   font: inherit;
   font-size: 14px;
   color: var(--watch-text);
-  background: #ffffff;
+  background: #fff;
   box-sizing: border-box;
   transition: border-color 0.2s ease;
 }
-
 .watch-chat-intake-input:focus {
   outline: 0;
   border-color: var(--watch-primary);
+  box-shadow: 0 0 0 3px rgba(18,106,89,.10);
 }
-
 .watch-chat-intake-textarea {
-  min-height: 86px;
+  min-height: 80px;
   resize: vertical;
 }
+
+.watch-chat-intake-consents {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.78);
+  border: 1px solid rgba(0,0,0,.06);
+}
+
+.watch-chat-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: #475467;
+  line-height: 1.55;
+}
+.watch-chat-consent input { accent-color: var(--watch-primary); margin-top: 2px; }
+.watch-chat-consent-intake { font-size: 12px; color: #344054; }
 
 .watch-chat-start-btn {
   margin-top: 14px;
@@ -707,22 +596,30 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   border-radius: 12px;
   padding: 0 18px;
   font: inherit;
+  font-size: 14px;
   font-weight: 700;
   color: var(--watch-button-text);
   background: linear-gradient(145deg, var(--watch-primary), var(--watch-secondary));
   cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
 }
+.watch-chat-start-btn:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+.watch-chat-start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* --------------------------------------------------------------------------
+   15. Chat message bubbles
+   -------------------------------------------------------------------------- */
 .watch-chat-message {
-  max-width: 85%;
-  padding: 14px 16px;
+  max-width: 70%;
+  padding: 11px 14px;
   border-radius: 18px;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
   white-space: pre-wrap;
   display: inline-flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
+  word-break: break-word;
 }
 
 .watch-chat-message-content {
@@ -742,182 +639,133 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
 
 .watch-chat-message-assistant {
   margin-right: auto;
-  background: var(--watch-surface);
+  background: #fff;
   color: var(--watch-text);
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,.07);
   border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
 }
 
 .watch-chat-human {
   border-color: var(--watch-accent);
-  background: #f3f8ff;
+  background: #fdf9f3;
 }
 
 .watch-chat-message-icon {
   width: 18px;
   min-width: 18px;
   height: 18px;
-  border-radius: 999px;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
   line-height: 1;
-  margin-top: 2px;
+  margin-top: 1px;
+  flex-shrink: 0;
 }
+.watch-chat-message-user      .watch-chat-message-icon { background: rgba(255,255,255,.2); color: #fff; }
+.watch-chat-message-assistant .watch-chat-message-icon { background: rgba(18,106,89,.10); color: var(--watch-primary); }
+.watch-chat-human              .watch-chat-message-icon { background: rgba(184,142,82,.15); color: var(--watch-accent); }
 
-.watch-chat-message-user .watch-chat-message-icon {
-  background: rgba(255,255,255,0.2);
-  color: #fff;
-}
+.watch-chat-message-text { flex: 1; }
 
-.watch-chat-message-assistant .watch-chat-message-icon {
-  background: rgba(18, 106, 89, 0.10);
-  color: var(--watch-primary);
-}
+.watch-chat-typing { opacity: 0.65; font-style: italic; }
 
-.watch-chat-human .watch-chat-message-icon {
-  background: rgba(184, 142, 82, 0.15);
-  color: var(--watch-accent);
-}
-
-.watch-chat-message-text {
-  flex: 1;
-}
-
+/* --------------------------------------------------------------------------
+   16. Product cards (grid, no horizontal scroll)
+   -------------------------------------------------------------------------- */
 .watch-chat-carousel {
-  position: relative;
-  width: calc(100% + 8px);
-  margin: 4px -4px 0;
-  padding: 0 2px;
-  overflow: hidden;
+  width: 100%;
+  margin: 6px 0 0;
 }
 
 .watch-chat-cards {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
 }
 
+/* 2 columns when there are multiple cards */
 .watch-chat-cards-grid {
   grid-template-columns: repeat(2, 1fr);
 }
 
-.watch-chat-cards-grid .watch-chat-card {
-  width: 100%;
-  max-width: 100%;
-}
-
+/* single card stays full-width */
 .watch-chat-cards-compact .watch-chat-card {
   width: 100%;
-}
-
-.watch-chat-carousel-arrow {
-  display: none !important;
-}
-
-.watch-chat-carousel-arrow span {
-  display: none;
-}
-
-.watch-chat-carousel-arrow-prev {
-  display: none;
-}
-
-.watch-chat-carousel-arrow-next {
-  display: none;
-}
-
-.watch-chat-cards::-webkit-scrollbar {
-  display: none;
-}
-
-.watch-chat-cards::-webkit-scrollbar-thumb {
-  display: none;
-}
-
-.watch-chat-cards::-webkit-scrollbar-track {
-  display: none;
 }
 
 .watch-chat-card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   width: 100%;
   min-width: 0;
   text-decoration: none;
   color: inherit;
   background: #fff;
   border: 1.5px solid #ebebeb;
-  border-radius: 16px;
-  padding: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
-
 .watch-chat-card:hover {
   transform: translateY(-2px);
   border-color: var(--watch-primary);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 8px 20px rgba(0,0,0,.10);
 }
 
 .watch-chat-card-image {
-  display: flex;
   width: 100%;
-  height: 130px;
-  border-radius: 12px;
+  height: 120px;
   overflow: hidden;
   background: #f4f4f4;
-  margin-bottom: 10px;
+  display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
-
-.watch-chat-card-placeholder {
-  display: block;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  background: rgba(18, 106, 89, 0.12);
-}
-
 .watch-chat-card-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
+.watch-chat-card-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(18,106,89,.12);
+  display: block;
+}
 
 .watch-chat-card-body {
-  display: grid;
-  gap: 10px;
+  padding: 10px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
 }
-
 .watch-chat-card-body strong {
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1.35;
   color: #12212f;
-  min-height: 32px;
 }
-
 .watch-chat-card-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
-
 .watch-chat-card-category {
-  font-size: 12px;
+  font-size: 11px;
   color: #667085;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .watch-chat-card-body em {
   font-style: normal;
   font-size: 13px;
@@ -925,24 +773,25 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   color: var(--watch-primary);
   white-space: nowrap;
 }
-
 .watch-chat-card-cta {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
-  border-radius: 10px;
+  height: 34px;
+  border-radius: 8px;
   background: var(--watch-primary);
   color: var(--watch-button-text);
   font-size: 12px;
   font-weight: 600;
+  text-decoration: none;
   transition: background 0.2s ease;
+  margin-top: auto;
 }
+.watch-chat-card-cta:hover { background: var(--watch-secondary); }
 
-.watch-chat-card-cta:hover {
-  background: var(--watch-secondary);
-}
-
+/* --------------------------------------------------------------------------
+   17. Inline link chips & contact actions
+   -------------------------------------------------------------------------- */
 .watch-chat-links {
   display: flex;
   flex-wrap: wrap;
@@ -953,14 +802,14 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .watch-chat-contact-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
+  min-height: 36px;
   padding: 0 14px;
   border-radius: 999px;
   background: linear-gradient(145deg, var(--watch-primary), var(--watch-secondary));
@@ -968,15 +817,15 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
-  box-shadow: 0 10px 22px rgba(16, 24, 40, 0.08);
+  box-shadow: 0 6px 16px rgba(16,24,40,.08);
 }
 
 .watch-chat-link-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
-  padding: 0 14px;
+  min-height: 34px;
+  padding: 0 12px;
   border-radius: 999px;
   background: transparent;
   border: 1.5px solid var(--watch-primary);
@@ -984,19 +833,13 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   font-size: 12px;
   font-weight: 600;
   text-decoration: none;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
+.watch-chat-link-btn:hover { background: var(--watch-primary); color: #fff; }
 
-.watch-chat-link-btn:hover {
-  background: var(--watch-primary);
-  color: #fff;
-}
-
-.watch-chat-typing {
-  opacity: 0.72;
-  font-style: italic;
-}
-
+/* --------------------------------------------------------------------------
+   18. Chat history panel
+   -------------------------------------------------------------------------- */
 .watch-chat-history {
   display: none;
   border-top: 1px solid #ebebeb;
@@ -1006,10 +849,7 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   overflow-y: auto;
   flex-shrink: 0;
 }
-
-.watch-chat-history.active {
-  display: block;
-}
+.watch-chat-history.active { display: block; }
 
 .watch-chat-history-header {
   display: flex;
@@ -1022,28 +862,23 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
 .watch-chat-history-close,
 .watch-chat-tool-btn {
   border: 1.5px solid #e0e0e0;
-  background: #ffffff;
+  background: #fff;
   color: #444;
   border-radius: 999px;
-  padding: 7px 14px;
+  padding: 6px 14px;
   cursor: pointer;
+  font: inherit;
   font-size: 12px;
   font-weight: 600;
-  box-shadow: none;
-  transition: border-color 0.2s, color 0.2s;
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
-
 .watch-chat-history-close:hover,
 .watch-chat-tool-btn:hover {
   border-color: var(--watch-primary);
   color: var(--watch-primary);
 }
 
-.watch-chat-history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+.watch-chat-history-list { display: flex; flex-direction: column; gap: 8px; }
 
 .watch-chat-history-item {
   text-align: left;
@@ -1055,19 +890,13 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s ease;
   width: 100%;
+  font: inherit;
 }
-
-.watch-chat-history-item:hover {
-  border-color: var(--watch-primary);
-}
-
+.watch-chat-history-item:hover { border-color: var(--watch-primary); }
 .watch-chat-history-item span,
-.watch-chat-history-empty {
-  color: #667085;
-  font-size: 12px;
-}
+.watch-chat-history-empty { color: #667085; font-size: 12px; }
 
 .watch-chat-history-detail {
   margin-top: 8px;
@@ -1081,236 +910,159 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   line-height: 1.5;
 }
 
+/* --------------------------------------------------------------------------
+   19. Chat input area — Intercom-style composer
+   -------------------------------------------------------------------------- */
 .watch-chat-form {
-  padding: 12px 14px;
+  padding: 10px 12px 12px;
   border-top: 1px solid #ebebeb;
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  align-items: end;
-  background: #ffffff;
+  background: #fff;
   flex-shrink: 0;
 }
 
+/* Toolbar: Previous Chats | Reset Chat */
 .watch-chat-toolbar {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 6px;
   flex-wrap: wrap;
   align-items: center;
 }
 
-.watch-chat-consent {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 12px;
-  color: #475467;
-  line-height: 1.55;
-}
-
-.watch-chat-consent input {
-  accent-color: var(--watch-primary);
-  margin-top: 2px;
-}
-
-.watch-chat-consent-intake {
-  font-size: 12px;
-  color: #344054;
-}
-
+/* Composer shell — contains textarea + action buttons side by side */
 .watch-chat-composer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
+  display: flex;
   align-items: flex-end;
+  gap: 6px;
+  background: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 24px;
+  padding: 6px 6px 6px 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.watch-chat-composer:focus-within {
+  border-color: var(--watch-primary);
+  box-shadow: 0 0 0 3px rgba(18,106,89,.10);
 }
 
-.watch-chat-input-wrap {
-  position: relative;
+/* Textarea sits inside the composer shell, no own border */
+.watch-chat-input-wrap { flex: 1; min-width: 0; }
+
+.watch-chat-input {
+  width: 100%;
+  min-height: 28px;
+  max-height: 120px;
+  resize: none;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  padding: 5px 0 !important;
+  font: inherit;
+  font-size: 14px !important;
+  color: var(--watch-text);
+  background: transparent;
+  box-sizing: border-box;
+  line-height: 1.5;
+  overflow-y: auto;
+  display: block;
+}
+.watch-chat-input:focus {
+  outline: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
-.watch-chat-upload-row {
+/* Right-side action buttons inside the composer */
+.watch-chat-composer-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  position: absolute;
-  left: 12px;
-  bottom: 10px;
-  z-index: 2;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-bottom: 2px;
 }
 
+/* Attachment button */
 .watch-chat-upload-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: 999px;
-  background: var(--watch-surface);
-  border: 1px solid #e0e0e0;
-  color: var(--watch-primary);
+  border-radius: 50%;
+  background: transparent;
+  color: #8a9ab0;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.06);
+  transition: background 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
 }
-
-.watch-chat-upload-btn svg {
-  width: 16px;
-  height: 16px;
+.watch-chat-upload-btn:hover {
+  background: var(--watch-surface);
+  color: var(--watch-primary);
 }
+.watch-chat-upload-btn svg { width: 18px; height: 18px; }
+.watch-chat-upload-input { display: none; }
 
-.watch-chat-upload-input {
-  display: none;
-}
-
+/* Upload status (inline, small) */
 .watch-chat-upload-status {
-  font-size: 12px;
+  font-size: 11px;
   color: #667085;
-  background: rgba(255,255,255,0.95);
-  border-radius: 999px;
-  padding: 4px 10px;
+  max-width: 80px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.watch-chat-input {
-  width: 100%;
-  min-height: 72px !important;
-  height: 72px !important;
-  max-height: 110px !important;
-  resize: none;
-  border: 1.5px solid #e0e0e0 !important;
-  border-radius: 12px !important;
-  padding: 12px 14px 48px 14px !important;
-  font: inherit;
-  font-size: 14px !important;
-  color: var(--watch-text);
-  background: #ffffff;
-  box-sizing: border-box;
-  transition: border-color 0.2s ease;
-}
-
-.watch-chat-input:focus {
-  outline: 0;
-  border-color: var(--watch-primary) !important;
-  box-shadow: 0 0 0 3px rgba(18, 106, 89, 0.10);
-}
-
+/* Send button — circle icon */
 .watch-chat-send {
-  height: 40px !important;
-  min-width: 80px;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
   border: 0 !important;
-  border-radius: 10px !important;
-  padding: 0 16px !important;
-  font: inherit;
-  font-size: 13px !important;
-  font-weight: 700 !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   color: var(--watch-button-text);
   background: var(--watch-primary);
   cursor: pointer;
   transition: background 0.2s ease, transform 0.15s ease;
-}
-
-.watch-chat-send:hover:not(:disabled) {
-  background: var(--watch-secondary);
-  transform: translateY(-1px);
-}
-
-.watch-chat-send:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.watch-form-header {
-  padding: 16px 18px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
   flex-shrink: 0;
 }
-
-.watch-form-title {
-  flex: 1;
-  text-align: left;
-  margin-right: 0;
+.watch-chat-send svg {
+  width: 16px !important;
+  height: 16px !important;
+  stroke: currentColor !important;
+  fill: none !important;
+  display: block !important;
 }
-
-.watch-form-body {
-  padding: 20px 18px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  flex: 1;
-  -webkit-overflow-scrolling: touch;
-  background: var(--watch-surface);
+.watch-chat-send:hover:not(:disabled) {
+  background: var(--watch-secondary);
+  transform: scale(1.10);
 }
+.watch-chat-send:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.watch-form-fallback {
-  padding: 18px;
-  border-radius: 14px;
-  background: #fff;
-  border: 1px solid #dbeceb;
-  color: #2c3e50;
-}
-
-#watchFormPopup .wpforms-container,
-#watchFormPopup .wpforms-form {
-  margin-bottom: 0 !important;
-  margin: 0 !important;
-}
-
-@media (min-width: 1025px) {
-  .watch-menu {
-    width: 380px;
-    max-height: 720px;
-  }
-
-  .watch-menu-body {
-    padding: 24px 16px;
-    gap: 16px;
-  }
-}
-
+/* --------------------------------------------------------------------------
+   20. Responsive — ≤1024px (tablet)
+   -------------------------------------------------------------------------- */
 @media (max-width: 1024px) {
   .watch-menu,
   .watch-form-popup,
   .watch-chat-popup {
     width: calc(100vw - 48px);
     right: 24px;
-    max-height: 720px;
-  }
-
-  .watch-menu-body {
-    padding: 22px 16px;
-    gap: 14px;
-  }
-
-  .watch-menu-action {
-    padding: 20px 18px;
-    min-height: 68px;
-  }
-
-  .watch-action-icon {
-    width: 50px;
-    height: 50px;
-  }
-
-  .watch-action-icon svg {
-    width: 26px;
-    height: 26px;
-  }
-
-  .watch-action-title {
-    font-size: 14px;
   }
 }
 
+/* --------------------------------------------------------------------------
+   21. Responsive — ≤800px
+   -------------------------------------------------------------------------- */
 @media (max-width: 800px) {
-  #watchWidget {
-    bottom: 18px;
-    right: 18px;
-  }
-
-  body:has(.lqd-back-to-top.is-visible) #watchWidget {
-    bottom: calc(18px + 48px + 12px);
-  }
+  #watchWidget { bottom: 18px; right: 18px; }
+  body:has(.lqd-back-to-top.is-visible) #watchWidget { bottom: calc(18px + 48px + 12px); }
 
   .watch-menu,
   .watch-form-popup,
@@ -1320,27 +1072,16 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
     bottom: 94px;
     max-height: 85vh;
   }
-
-  .watch-button {
-    width: 56px;
-    height: 56px;
-  }
-
-  .watch-label {
-    font-size: 12px;
-    padding: 7px 12px;
-  }
+  .watch-button { width: 56px; height: 56px; }
+  .watch-label  { font-size: 12px; padding: 7px 12px; }
 }
 
+/* --------------------------------------------------------------------------
+   22. Responsive — ≤768px (mobile landscape / small tablet)
+   -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-  #watchWidget {
-    bottom: 16px;
-    right: 16px;
-  }
-
-  body:has(.lqd-back-to-top.is-visible) #watchWidget {
-    bottom: calc(16px + 48px + 12px);
-  }
+  #watchWidget { bottom: 16px; right: 16px; }
+  body:has(.lqd-back-to-top.is-visible) #watchWidget { bottom: calc(16px + 48px + 12px); }
 
   .watch-menu,
   .watch-form-popup,
@@ -1348,321 +1089,99 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
     width: calc(100vw - 32px);
     right: 16px;
     bottom: 90px;
-    max-height: 78vh;
-  }
-
-  .watch-button {
-    width: 54px;
-    height: 54px;
-  }
-
-  .watch-icon-chat {
-    width: 28px;
-    height: 28px;
-  }
-
-  .watch-label {
-    font-size: 11px;
-    padding: 6px 11px;
-  }
-
-  .watch-menu-header {
-    padding: 16px 18px;
-  }
-
-  .watch-menu-body {
-    padding: 18px 12px;
-    gap: 12px;
-  }
-
-  .watch-menu-action {
-    padding: 17px 15px;
-    min-height: 62px;
-    gap: 14px;
-  }
-
-  .watch-action-icon {
-    width: 46px;
-    height: 46px;
-  }
-
-  .watch-action-icon svg {
-    width: 22px;
-    height: 22px;
-  }
-
-  .watch-action-title {
-    font-size: 13px;
-  }
-
-  .watch-menu-footer {
-    padding: 14px 16px;
-  }
-
-  .watch-form-header {
-    padding: 14px 16px;
-  }
-
-  .watch-form-body {
-    padding: 14px;
-  }
-
-  .watch-chat-header {
-    padding: 14px 16px;
-  }
-
-  .watch-chat-body {
-    padding: 14px 12px;
-  }
-
-  .watch-chat-intake {
-    padding: 14px 12px;
-  }
-
-  .watch-chat-intake-card {
-    padding: 16px;
-  }
-
-  .watch-chat-intake-card h3 {
-    font-size: 17px;
-  }
-
-  .watch-chat-intake-card p {
-    margin-bottom: 12px;
-    font-size: 12px;
-  }
-
-  .watch-chat-intake-grid {
-    gap: 8px;
-  }
-
-  .watch-chat-intake-input {
-    padding: 11px 12px;
-  }
-
-  .watch-chat-intake-textarea {
-    min-height: 72px;
-  }
-
-  .watch-chat-intake-consents {
-    gap: 6px;
-    padding: 9px 10px;
-  }
-
-  .watch-chat-consent-intake {
-    font-size: 11px;
-    line-height: 1.45;
-  }
-
-  .watch-chat-start-btn {
-    margin-top: 12px;
-    height: 44px;
-  }
-
-  .watch-chat-form {
-    padding: 12px;
-    grid-template-columns: 1fr;
-  }
-
-  .watch-chat-composer {
-    grid-template-columns: 1fr;
-  }
-
-  .watch-chat-send {
-    width: 100%;
-  }
-
-  .watch-chat-input {
-    min-height: 74px !important;
-    height: 74px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  #watchWidget {
-    bottom: 12px;
-    right: 12px;
-  }
-
-  body:has(.lqd-back-to-top.is-visible) #watchWidget {
-    bottom: calc(12px + 44px + 8px);
-  }
-
-  .watch-menu,
-  .watch-form-popup,
-  .watch-chat-popup {
-    width: calc(100vw - 24px);
-    right: 12px;
-    bottom: 84px;
     max-height: 80vh;
   }
 
-  .watch-button {
-    width: 50px;
-    height: 50px;
+  .watch-button     { width: 54px; height: 54px; }
+  .watch-label      { font-size: 11px; padding: 6px 11px; }
+
+  .watch-menu-header,
+  .watch-chat-header,
+  .watch-form-header { padding: 14px 16px; }
+
+  .watch-menu-body  { padding: 16px 12px; gap: 12px; }
+  .watch-form-body  { padding: 14px; }
+  .watch-chat-body  { padding: 14px 12px; }
+  .watch-chat-intake { padding: 14px 12px; }
+
+  .watch-menu-action  { padding: 16px 14px; min-height: 60px; gap: 14px; }
+  .watch-action-icon  { width: 44px; height: 44px; min-width: 44px; }
+  .watch-action-icon svg { width: 22px; height: 22px; }
+  .watch-action-title { font-size: 14px; }
+
+  .watch-chat-input-wrap, .watch-chat-composer-actions { /* keep side-by-side */ }
+}
+
+/* --------------------------------------------------------------------------
+   23. Responsive — ≤480px (mobile portrait — chat goes FULLSCREEN)
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  #watchWidget { bottom: 14px; right: 14px; }
+  body:has(.lqd-back-to-top.is-visible) #watchWidget { bottom: calc(14px + 44px + 10px); }
+
+  /* Menu & form: near-fullscreen floating panel */
+  .watch-menu,
+  .watch-form-popup {
+    width: calc(100vw - 28px);
+    right: 14px;
+    bottom: 86px;
+    max-height: 82vh;
   }
 
-  .watch-icon-chat {
-    width: 24px;
-    height: 24px;
-  }
-
-  .watch-label {
-    font-size: 10px;
-    padding: 5px 10px;
-  }
-
-  .watch-menu-header {
-    padding: 14px;
-  }
-
-  .watch-menu-title {
-    font-size: 15px;
-  }
-
-  .watch-brand-logo {
-    width: 30px;
-    height: 30px;
-    min-width: 30px;
-  }
-
-  .watch-menu-body {
-    padding: 14px 8px;
-    gap: 10px;
-  }
-
-  .watch-menu-action {
-    padding: 14px 12px;
-    min-height: 56px;
-    gap: 12px;
-  }
-
-  .watch-action-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .watch-action-icon svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .watch-action-title {
-    font-size: 11px;
-  }
-
-  .watch-menu-footer {
-    padding: 12px;
-  }
-
-  .watch-form-header {
-    padding: 12px 14px;
-  }
-
-  .watch-form-title {
-    font-size: 14px;
-  }
-
-  .watch-form-body {
-    padding: 12px;
-  }
-
-  .watch-chat-header {
-    padding: 12px 12px;
-  }
-
-  .watch-chat-title {
-    font-size: 14px;
-  }
-
-  .watch-chat-body {
-    padding: 12px 10px;
-  }
-
-  .watch-chat-intake {
-    padding: 10px;
-  }
-
-  .watch-chat-intake-card {
-    padding: 14px;
-    border-radius: 16px;
-  }
-
-  .watch-chat-intake-card h3 {
-    font-size: 16px;
-  }
-
-  .watch-chat-intake-card p {
-    font-size: 12px;
-    line-height: 1.45;
-  }
-
-  .watch-chat-intake-consents {
-    margin-top: 10px;
-    padding: 8px 10px;
-    border-radius: 14px;
-  }
-
-  .watch-chat-consent-intake {
-    font-size: 10px;
-    line-height: 1.4;
-  }
-
-  .watch-chat-start-btn {
-    margin-top: 10px;
-    height: 42px;
-  }
-
-  .watch-chat-form {
-    grid-template-columns: 1fr;
-  }
-
-  .watch-chat-composer {
-    grid-template-columns: 1fr;
-  }
-
-  .watch-chat-send {
+  /* Chat: true fullscreen */
+  .watch-chat-popup {
+    position: fixed;
+    inset: 0;
     width: 100%;
+    height: 100%;
+    height: 100dvh;
+    bottom: 0;
+    right: 0;
+    border-radius: 0;
+    max-height: none;
   }
 
-  .watch-chat-input {
-    min-height: 66px !important;
-    height: 66px !important;
-    font-size: 15px;
-  }
+  .watch-button { width: 52px; height: 52px; }
+  .watch-label  { font-size: 10px; padding: 5px 10px; }
 
-  .watch-chat-tool-btn,
-  .watch-chat-history-close {
-    flex: 1 1 calc(50% - 4px);
-    text-align: center;
-  }
+  .watch-menu-header  { padding: 14px; }
+  .watch-menu-title   { font-size: 15px; }
+  .watch-menu-body    { padding: 14px 10px; gap: 10px; }
+  .watch-menu-action  { padding: 14px 12px; min-height: 56px; gap: 12px; }
+  .watch-action-icon  { width: 40px; height: 40px; min-width: 40px; }
+  .watch-action-icon svg { width: 20px; height: 20px; }
+  .watch-action-title { font-size: 13px; }
+  .watch-menu-footer  { padding: 12px; }
 
+  .watch-chat-header  { padding: 14px 16px; }
+  .watch-chat-title   { font-size: 15px; }
+  .watch-chat-body    { padding: 12px 10px; }
+  .watch-chat-intake  { padding: 12px; }
+
+  .watch-chat-intake-card { padding: 14px; }
+  .watch-chat-intake-card h3 { font-size: 16px; }
+  .watch-chat-intake-consents { padding: 8px 10px; margin-top: 10px; }
+  .watch-chat-consent-intake  { font-size: 11px; }
+  .watch-chat-start-btn       { height: 44px; }
+
+  /* Single column cards on mobile */
   .watch-chat-cards-grid {
     grid-template-columns: 1fr;
   }
 
-  .watch-chat-cards-grid .watch-chat-card {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .watch-chat-carousel {
-    width: 100%;
-    margin: 4px 0 0;
-  }
-
-  .watch-chat-cards {
-    gap: 8px;
-    padding-right: 0;
-  }
+  .watch-chat-tool-btn { font-size: 11px; padding: 5px 10px; }
 }
 
-.flatpickr-calendar { z-index: 9999999 !important; }
-.ui-timepicker-wrapper { z-index: 9999999 !important; }
+/* --------------------------------------------------------------------------
+   24. Third-party overrides (flatpickr, select2, lity)
+   -------------------------------------------------------------------------- */
+.flatpickr-calendar                       { z-index: 9999999 !important; }
+.ui-timepicker-wrapper                    { z-index: 9999999 !important; }
 .select2-container--open .select2-dropdown { z-index: 9999999 !important; }
-.lity, .lity-wrap { z-index: 99999999 !important; pointer-events: auto !important; }
-.lity-hide { pointer-events: none !important; }
+.lity, .lity-wrap                         { z-index: 99999999 !important; pointer-events: auto !important; }
+.lity-hide                                { pointer-events: none !important; }
 
+/* Hide reCAPTCHA inside form popup */
 .watch-form-popup .grecaptcha-badge,
 .watch-form-popup .wpforms-recaptcha-container,
 #watchFormPopup .g-recaptcha,
