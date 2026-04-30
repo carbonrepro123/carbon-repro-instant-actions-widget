@@ -359,7 +359,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             'chatbot_enabled' => empty($input['chatbot_enabled']) ? '0' : '1',
             'chatbot_title' => sanitize_text_field(isset($input['chatbot_title']) ? $input['chatbot_title'] : $defaults['chatbot_title']),
             'chatbot_welcome_message' => sanitize_textarea_field(isset($input['chatbot_welcome_message']) ? $input['chatbot_welcome_message'] : $defaults['chatbot_welcome_message']),
-            'chat_message_limit' => max(1, absint(isset($input['chat_message_limit']) ? $input['chat_message_limit'] : $defaults['chat_message_limit'])),
+            'chat_message_limit' => max(0, absint(isset($input['chat_message_limit']) ? $input['chat_message_limit'] : $defaults['chat_message_limit'])),
             'chat_limit_message' => sanitize_textarea_field(isset($input['chat_limit_message']) ? $input['chat_limit_message'] : $defaults['chat_limit_message']),
             'notification_email' => sanitize_email(isset($input['notification_email']) ? $input['notification_email'] : $defaults['notification_email']),
             'notification_sms_number' => preg_replace('/[^0-9+]/', '', (string) (isset($input['notification_sms_number']) ? $input['notification_sms_number'] : $defaults['notification_sms_number'])),
@@ -543,7 +543,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             'carbonReproWidget',
             array(
                 'smsNumber' => $this->get_setting('phone_number', '7137056097'),
-                'chatLimit' => (int) $this->get_setting('chat_message_limit', 7),
+                'chatLimit' => (int) $this->get_setting('chat_message_limit', 0),
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('criaw_track_event'),
                 'chatNonce' => wp_create_nonce('criaw_chat_message'),
@@ -764,6 +764,7 @@ final class Carbon_Repro_Instant_Actions_Widget
                             <button type="button" class="watch-chat-tool-btn" id="watchChatResetBtn"><?php esc_html_e('Reset Chat', 'carbon-repro-widget'); ?></button>
                         </div>
                         <div class="watch-chat-composer">
+                            <div class="watch-chat-attachments" id="watchChatAttachments" aria-live="polite"></div>
                             <div class="watch-chat-input-wrap">
                                 <textarea id="watchChatInput" class="watch-chat-input" rows="1" placeholder="<?php esc_attr_e('Type your message...', 'carbon-repro-widget'); ?>"></textarea>
                             </div>
@@ -1621,32 +1622,41 @@ final class Carbon_Repro_Instant_Actions_Widget
         }
         $transcript = array();
         $reply = $this->get_default_start_reply($lead);
+        $assistant_meta = array('catalog_cards' => array(), 'catalog_links' => array(), 'contact_actions' => array());
+        $intent = 'UNKNOWN';
 
         if ($lead['looking_for'] !== '') {
             $catalog_suggestions = $this->get_catalog_suggestions_for_query($lead['looking_for']);
+            $intent = $this->classify_user_intent($lead['looking_for'], $catalog_suggestions);
             $transcript[] = array(
                 'role' => 'user',
                 'content' => $lead['looking_for'],
                 'time' => current_time('mysql'),
             );
-            $static_reply = $this->get_static_intent_reply($lead['looking_for'], $lead, $catalog_suggestions);
-            if ($static_reply !== '') {
-                $reply = $static_reply;
-            } elseif ($this->should_use_catalog_fast_path($lead['looking_for'], $catalog_suggestions)) {
-                $reply = $this->format_catalog_assisted_reply($lead['looking_for'], $reply, $catalog_suggestions);
+
+            if ($intent === 'GREETING') {
+                $reply = __('Hi! How can I help you today?', 'carbon-repro-widget');
+            } elseif ($intent === 'GRATITUDE') {
+                $reply = __('You are welcome. Let me know if you need anything else.', 'carbon-repro-widget');
+            } elseif ($intent === 'BUSINESS_INFO') {
+                $reply = $this->get_business_info_reply();
+                $assistant_meta = $this->build_assistant_meta(array('cards' => array(), 'links' => array()), $lead['looking_for'], true);
+            } elseif ($intent === 'PRODUCT_BROWSE') {
+                $catalog_suggestions = $this->get_brand_browse_suggestions();
+                $reply = __('Sure! Here are some of our watch brands and collections. Tell me which brand you want and I will show matching pieces.', 'carbon-repro-widget');
+                $assistant_meta = $this->build_assistant_meta($catalog_suggestions, $lead['looking_for'], false);
+            } elseif ($intent === 'PRODUCT_SEARCH' || $intent === 'PRODUCT_DETAILS') {
+                $reply = $this->format_catalog_assisted_reply($lead['looking_for'], '', $catalog_suggestions);
+                $assistant_meta = $this->build_assistant_meta($catalog_suggestions, $lead['looking_for'], false);
             } else {
                 $result = $this->request_openai_reply($transcript, $lead);
                 if (! is_wp_error($result) && ! empty($result['reply'])) {
                     $reply = $result['reply'];
                     $lead = $this->merge_lead_data($lead, $result['lead']);
+                } else {
+                    $reply = __('Can you tell me your preferred brand or price range?', 'carbon-repro-widget');
                 }
             }
-        }
-        $catalog_suggestions = isset($catalog_suggestions) ? $catalog_suggestions : $this->get_catalog_suggestions_for_query($lead['looking_for']);
-        $reply = $this->format_catalog_assisted_reply($lead['looking_for'], $reply, $catalog_suggestions);
-        $assistant_meta = $this->build_assistant_meta($catalog_suggestions, $lead['looking_for'], isset($catalog_suggestions['intent_type']) && $catalog_suggestions['intent_type'] === 'service_info');
-        if (! empty($assistant_meta['contact_actions'])) {
-            $reply = $this->clean_reply_contact_block($reply);
         }
 
         $transcript[] = array(
@@ -1659,6 +1669,7 @@ final class Carbon_Repro_Instant_Actions_Widget
         update_post_meta($conversation_id, '_criaw_meta', $meta_store);
         update_post_meta($conversation_id, '_criaw_transcript', $transcript);
         update_post_meta($conversation_id, '_criaw_last_message_at', current_time('mysql'));
+        $this->set_chat_context($conversation_id, $intent, $lead['looking_for'], isset($assistant_meta['catalog_cards']) ? $assistant_meta['catalog_cards'] : array());
         $this->refresh_conversation_title($conversation_id, $lead);
 
         $event = $meta;
@@ -1715,6 +1726,7 @@ final class Carbon_Repro_Instant_Actions_Widget
         $human_takeover = get_post_meta($conversation_id, '_criaw_human_takeover', true) === '1';
         $meta_store = array_merge($meta_store, $meta);
         $meta_store['conversation_id'] = $conversation_id;
+        $context = $this->get_chat_context($conversation_id);
         if (! empty($meta['email_updates_opt_in'])) {
             $meta_store['email_updates_opt_in'] = $meta['email_updates_opt_in'];
         }
@@ -1772,27 +1784,42 @@ final class Carbon_Repro_Instant_Actions_Widget
         }
 
         $catalog_suggestions = $this->get_catalog_suggestions_for_query($message);
-        $static_reply = $this->get_static_intent_reply($message, $lead, $catalog_suggestions);
-        if ($static_reply !== '') {
-            $result = array(
-                'reply' => $static_reply,
-                'lead' => $lead,
-            );
-        } elseif ($this->should_use_catalog_fast_path($message, $catalog_suggestions)) {
-            $result = array(
-                'reply' => $this->format_catalog_assisted_reply($message, '', $catalog_suggestions),
-                'lead' => $lead,
-            );
+        $intent = $this->classify_user_intent($message, $catalog_suggestions);
+        $result = array('reply' => '', 'lead' => $lead);
+        $assistant_meta = array('catalog_cards' => array(), 'catalog_links' => array(), 'contact_actions' => array());
+
+        if ($intent === 'GREETING') {
+            $result['reply'] = __('Hi! How can I help you today?', 'carbon-repro-widget');
+        } elseif ($intent === 'GRATITUDE') {
+            $result['reply'] = __('You are welcome! Let me know if you need anything else.', 'carbon-repro-widget');
+        } elseif ($intent === 'BUSINESS_INFO') {
+            $result['reply'] = $this->get_business_info_reply();
+            $assistant_meta = $this->build_assistant_meta(array('cards' => array(), 'links' => array()), $message, true);
+        } elseif ($intent === 'PRODUCT_BROWSE') {
+            $catalog_suggestions = $this->get_brand_browse_suggestions();
+            $result['reply'] = __('Sure! Here are our brands and collections. Tell me the brand or model you want and I will narrow it down.', 'carbon-repro-widget');
+            $assistant_meta = $this->build_assistant_meta($catalog_suggestions, $message, false);
+        } elseif ($intent === 'PRODUCT_SEARCH' || $intent === 'PRODUCT_DETAILS') {
+            $refined_cards = $this->refine_cards_from_context($message, isset($context['last_catalog_cards']) ? $context['last_catalog_cards'] : array());
+            if (! empty($refined_cards)) {
+                $catalog_suggestions['cards'] = $refined_cards;
+                $catalog_suggestions['links'] = array();
+                $result['reply'] = __('Sure — here are options based on your previous results.', 'carbon-repro-widget');
+            } else {
+                $result['reply'] = $this->format_catalog_assisted_reply($message, '', $catalog_suggestions);
+            }
+            $assistant_meta = $this->build_assistant_meta($catalog_suggestions, $message, false);
         } else {
             $result = $this->request_openai_reply($transcript, $lead);
             if (is_wp_error($result)) {
-                wp_send_json_error(array('message' => $result->get_error_message()), 500);
+                $result = array(
+                    'reply' => __('Can you tell me your preferred brand or price range?', 'carbon-repro-widget'),
+                    'lead' => $lead,
+                );
             }
-            $result['reply'] = $this->format_catalog_assisted_reply($message, $result['reply'], $catalog_suggestions);
-        }
-        $assistant_meta = $this->build_assistant_meta($catalog_suggestions, $message, isset($catalog_suggestions['intent_type']) && $catalog_suggestions['intent_type'] === 'service_info');
-        if (! empty($assistant_meta['contact_actions'])) {
-            $result['reply'] = $this->clean_reply_contact_block($result['reply']);
+            if (empty($result['reply'])) {
+                $result['reply'] = __('Can you tell me your preferred brand or price range?', 'carbon-repro-widget');
+            }
         }
 
         $lead = $this->merge_lead_data($lead, $result['lead']);
@@ -1807,6 +1834,7 @@ final class Carbon_Repro_Instant_Actions_Widget
         update_post_meta($conversation_id, '_criaw_lead', $lead);
         update_post_meta($conversation_id, '_criaw_meta', $meta_store);
         update_post_meta($conversation_id, '_criaw_last_message_at', current_time('mysql'));
+        $this->set_chat_context($conversation_id, $intent, $message, isset($assistant_meta['catalog_cards']) ? $assistant_meta['catalog_cards'] : array());
         $this->refresh_conversation_title($conversation_id, $lead);
 
         if ($is_new_conversation) {
@@ -2757,6 +2785,7 @@ final class Carbon_Repro_Instant_Actions_Widget
                     'id' => $term->term_id,
                     'name' => $term->name,
                     'slug' => $term->slug,
+                    'parent' => (int) $term->parent,
                     'url' => get_term_link($term),
                     'description' => wp_trim_words(wp_strip_all_tags($term->description, true), 24, '...'),
                 );
@@ -2772,6 +2801,150 @@ final class Carbon_Repro_Instant_Actions_Widget
             'catalog_product_count' => count($products),
             'catalog_category_count' => count($categories),
         );
+    }
+
+    private function get_live_catalog_products($query, $price_filter, $categories, $brand_filters = array(), $limit = 80)
+    {
+        if (! $this->is_woocommerce_active()) {
+            return array();
+        }
+
+        $intent_query = $this->extract_catalog_intent_query($query);
+        $tokens = $this->get_catalog_significant_tokens($intent_query);
+        $tokens = array_values(array_filter($tokens, function ($token) {
+            return ! preg_match('/^\d+$/', (string) $token);
+        }));
+        $search_phrase = trim(implode(' ', array_slice($tokens, 0, 3)));
+        $sku_tokens = array_values(array_filter($this->get_catalog_significant_tokens($query), function ($token) {
+            return (bool) preg_match('/[a-z]{1,4}\d{5,}|\d{5,}/i', (string) $token);
+        }));
+
+        $meta_query = array('relation' => 'AND');
+        if (is_array($price_filter) && ! empty($price_filter['has_price_filter'])) {
+            if (isset($price_filter['min_price']) && $price_filter['min_price'] !== null && isset($price_filter['max_price']) && $price_filter['max_price'] !== null) {
+                $meta_query[] = array(
+                    'key' => '_price',
+                    'value' => array((float) $price_filter['min_price'], (float) $price_filter['max_price']),
+                    'compare' => 'BETWEEN',
+                    'type' => 'NUMERIC',
+                );
+            } elseif (isset($price_filter['max_price']) && $price_filter['max_price'] !== null) {
+                $meta_query[] = array(
+                    'key' => '_price',
+                    'value' => (float) $price_filter['max_price'],
+                    'compare' => '<=',
+                    'type' => 'NUMERIC',
+                );
+            } elseif (isset($price_filter['min_price']) && $price_filter['min_price'] !== null) {
+                $meta_query[] = array(
+                    'key' => '_price',
+                    'value' => (float) $price_filter['min_price'],
+                    'compare' => '>=',
+                    'type' => 'NUMERIC',
+                );
+            }
+        }
+
+        if (! empty($sku_tokens)) {
+            $sku_meta = array('relation' => 'OR');
+            foreach ($sku_tokens as $sku_token) {
+                $sku_meta[] = array('key' => '_sku', 'value' => (string) $sku_token, 'compare' => '=');
+                $sku_meta[] = array('key' => '_sku', 'value' => (string) $sku_token, 'compare' => 'LIKE');
+            }
+            $meta_query[] = $sku_meta;
+        }
+
+        $tax_query = array();
+        if (! empty($brand_filters) && is_array($categories)) {
+            $brand_slugs = array();
+            foreach ($categories as $category) {
+                $name = trim((string) (isset($category['name']) ? $category['name'] : ''));
+                $slug = trim((string) (isset($category['slug']) ? $category['slug'] : ''));
+                foreach ((array) $brand_filters as $brand) {
+                    if ($brand !== '' && strcasecmp($name, (string) $brand) === 0 && $slug !== '') {
+                        $brand_slugs[] = $slug;
+                    }
+                }
+            }
+            $brand_slugs = array_values(array_unique($brand_slugs));
+            if (! empty($brand_slugs)) {
+                $tax_query[] = array(
+                    'taxonomy' => 'product_cat',
+                    'field' => 'slug',
+                    'terms' => $brand_slugs,
+                    'operator' => 'IN',
+                );
+            }
+        } elseif (! empty($tokens) && is_array($categories)) {
+            $matched_slugs = array();
+            foreach ($categories as $category) {
+                $name = isset($category['name']) ? strtolower((string) $category['name']) : '';
+                $slug = isset($category['slug']) ? strtolower((string) $category['slug']) : '';
+                foreach ($tokens as $token) {
+                    if ($token !== '' && ($token === $name || $token === $slug || strpos($name, $token) !== false || strpos($slug, $token) !== false)) {
+                        if ($slug !== '') {
+                            $matched_slugs[] = $slug;
+                        }
+                        break;
+                    }
+                }
+            }
+            $matched_slugs = array_values(array_unique($matched_slugs));
+            if (! empty($matched_slugs)) {
+                $tax_query[] = array(
+                    'taxonomy' => 'product_cat',
+                    'field' => 'slug',
+                    'terms' => $matched_slugs,
+                    'operator' => 'IN',
+                );
+            }
+        }
+
+        $args = array(
+            'post_type' => 'product',
+            'post_status' => 'publish',
+            'numberposts' => max(10, absint($limit)),
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'suppress_filters' => false,
+        );
+        if (count($meta_query) > 1) {
+            $args['meta_query'] = $meta_query;
+        }
+        if (! empty($tax_query)) {
+            $args['tax_query'] = $tax_query;
+        }
+        if ($search_phrase !== '') {
+            $args['s'] = $search_phrase;
+        }
+
+        $posts = get_posts($args);
+        if (empty($posts) && isset($args['s'])) {
+            unset($args['s']);
+            $posts = get_posts($args);
+        }
+
+        $products = array();
+        foreach ((array) $posts as $post) {
+            $product = function_exists('wc_get_product') ? wc_get_product($post->ID) : null;
+            if (! $product) {
+                continue;
+            }
+            $products[] = array(
+                'id' => $post->ID,
+                'name' => $product->get_name(),
+                'sku' => $product->get_sku(),
+                'price' => wp_strip_all_tags($product->get_price_html()),
+                'url' => get_permalink($post->ID),
+                'categories' => wp_get_post_terms($post->ID, 'product_cat', array('fields' => 'names')),
+                'short_description' => wp_trim_words(wp_strip_all_tags($product->get_short_description(), true), 30, '...'),
+                'image' => get_the_post_thumbnail_url($post->ID, 'medium'),
+                'attributes' => $this->extract_product_attributes($product),
+                'searchable_text' => $this->build_product_searchable_text($product),
+            );
+        }
+
+        return $products;
     }
 
     private function build_catalog_cards_for_urls($urls)
@@ -2792,10 +2965,12 @@ final class Carbon_Repro_Instant_Actions_Widget
                 if (isset($product['url']) && $this->normalize_catalog_match_url($product['url']) === $url) {
                     $cards[] = array(
                         'type' => 'product',
+                        'id' => isset($product['id']) ? (int) $product['id'] : 0,
                         'url' => $url,
                         'title' => isset($product['name']) ? $product['name'] : '',
                         'price' => isset($product['price']) ? $product['price'] : '',
                         'category' => ! empty($product['categories']) ? implode(', ', (array) $product['categories']) : '',
+                        'description' => isset($product['short_description']) ? $product['short_description'] : '',
                         'image' => isset($product['image']) ? $product['image'] : '',
                     );
                     continue 2;
@@ -3118,7 +3293,19 @@ final class Carbon_Repro_Instant_Actions_Widget
 
     private function get_chat_message_limit()
     {
-        return max(1, absint($this->get_setting('chat_message_limit', 7)));
+        $configured = absint($this->get_setting('chat_message_limit', 0));
+
+        // 0 = disabled (recommended for AI-first flow).
+        if ($configured <= 0) {
+            return 0;
+        }
+
+        // Backward-compat: old default (7) was too aggressive and hurt UX.
+        if ($configured === 7) {
+            return 30;
+        }
+
+        return $configured;
     }
 
     private function count_user_messages($transcript)
@@ -3229,6 +3416,235 @@ final class Carbon_Repro_Instant_Actions_Widget
         );
     }
 
+    private function classify_user_intent($message, $catalog_suggestions = array())
+    {
+        $text = strtolower(trim((string) $message));
+        if ($text === '') {
+            return 'UNKNOWN';
+        }
+
+        if (preg_match('/^(hi|hello|hey|salam|assalam o alaikum|good morning|good afternoon|good evening)\b[!. ]*$/i', $text)) {
+            return 'GREETING';
+        }
+
+        if (preg_match('/\b(thanks|thank you|thx|ok thanks|great thanks|appreciate it)\b/i', $text)) {
+            return 'GRATITUDE';
+        }
+
+        if (preg_match('/\b(where are you|location|address|directions|contact|phone|email|hours|timing|open|close)\b/i', $text)) {
+            return 'BUSINESS_INFO';
+        }
+
+        if (preg_match('/\b(show brands|what brands|which brands|show categories|collections)\b/i', $text)) {
+            return 'PRODUCT_BROWSE';
+        }
+
+        if (preg_match('/\b(tell me about|details|description|specs|specifications|about this watch)\b/i', $text)) {
+            return 'PRODUCT_DETAILS';
+        }
+
+        if (preg_match('/\b(rolex|cartier|omega|patek|audemars|breitling|iwc|hublot|panerai|datejust|submariner|daytona|sku|reference|ref|model|buy|looking for|show me)\b/i', $text)) {
+            return 'PRODUCT_SEARCH';
+        }
+
+        if (is_array($catalog_suggestions) && (! empty($catalog_suggestions['cards']) || ! empty($catalog_suggestions['links']))) {
+            return 'PRODUCT_SEARCH';
+        }
+
+        return 'UNKNOWN';
+    }
+
+    private function get_chat_context($conversation_id)
+    {
+        $context = get_post_meta($conversation_id, '_criaw_chat_context', true);
+        return is_array($context) ? $context : array(
+            'last_intent' => '',
+            'last_query' => '',
+            'last_catalog_cards' => array(),
+        );
+    }
+
+    private function set_chat_context($conversation_id, $intent, $query, $catalog_cards)
+    {
+        update_post_meta($conversation_id, '_criaw_chat_context', array(
+            'last_intent' => (string) $intent,
+            'last_query' => (string) $query,
+            'last_catalog_cards' => is_array($catalog_cards) ? array_values($catalog_cards) : array(),
+        ));
+    }
+
+    private function parse_price_value($price_html)
+    {
+        $raw = wp_strip_all_tags((string) $price_html);
+        if (! preg_match('/[\d\.,]+/', $raw, $match)) {
+            return null;
+        }
+        $normalized = str_replace(',', '', $match[0]);
+        return is_numeric($normalized) ? (float) $normalized : null;
+    }
+
+    private function refine_cards_from_context($message, $context_cards)
+    {
+        $text = strtolower((string) $message);
+        $cards = is_array($context_cards) ? $context_cards : array();
+        if (empty($cards)) {
+            return array();
+        }
+
+        if (preg_match('/\b(cheaper|lower|budget|affordable|less expensive)\b/i', $text)) {
+            usort($cards, function ($a, $b) {
+                $pa = $this->parse_price_value(isset($a['price']) ? $a['price'] : '');
+                $pb = $this->parse_price_value(isset($b['price']) ? $b['price'] : '');
+                if ($pa === null && $pb === null) { return 0; }
+                if ($pa === null) { return 1; }
+                if ($pb === null) { return -1; }
+                return $pa <=> $pb;
+            });
+            return array_slice($cards, 0, 4);
+        }
+
+        if (preg_match('/\b(more expensive|premium|higher end|luxury)\b/i', $text)) {
+            usort($cards, function ($a, $b) {
+                $pa = $this->parse_price_value(isset($a['price']) ? $a['price'] : '');
+                $pb = $this->parse_price_value(isset($b['price']) ? $b['price'] : '');
+                if ($pa === null && $pb === null) { return 0; }
+                if ($pa === null) { return 1; }
+                if ($pb === null) { return -1; }
+                return $pb <=> $pa;
+            });
+            return array_slice($cards, 0, 4);
+        }
+
+        return array();
+    }
+
+    private function get_brand_browse_suggestions()
+    {
+        $index = get_option(self::CATALOG_INDEX_OPTION_KEY, array());
+        $categories = isset($index['categories']) && is_array($index['categories']) ? $index['categories'] : array();
+        $products = isset($index['products']) && is_array($index['products']) ? $index['products'] : array();
+        $brand_counts = array();
+        foreach ($products as $product) {
+            foreach ((array) (isset($product['categories']) ? $product['categories'] : array()) as $cat_name) {
+                $cat_name = trim((string) $cat_name);
+                if ($cat_name === '') {
+                    continue;
+                }
+                $brand_counts[$cat_name] = isset($brand_counts[$cat_name]) ? $brand_counts[$cat_name] + 1 : 1;
+            }
+        }
+        $links = array();
+
+        foreach ($categories as $category) {
+            if (isset($category['parent']) && (int) $category['parent'] !== 0) {
+                continue;
+            }
+            if (empty($category['name']) || empty($category['url'])) {
+                continue;
+            }
+            $label = trim((string) $category['name']);
+            if (! preg_match('/^[a-z][a-z0-9 &\-]{2,}$/i', $label)) {
+                continue;
+            }
+            if ((int) (isset($brand_counts[$label]) ? $brand_counts[$label] : 0) < 4) {
+                continue;
+            }
+            $links[] = array(
+                'label' => sprintf(__('View All %s', 'carbon-repro-widget'), $label),
+                'url' => (string) $category['url'],
+            );
+            if (count($links) >= 8) {
+                break;
+            }
+        }
+
+        return array(
+            'cards' => array(),
+            'links' => $this->dedupe_catalog_links($links),
+            'has_multiple_products' => false,
+            'is_generic_query' => true,
+            'intent_query' => 'brands',
+            'original_query' => 'brands',
+            'correction' => '',
+            'intent_type' => 'browse',
+            'model_names' => array(),
+            'price_filter' => array('has_price_filter' => false, 'min_price' => null, 'max_price' => null),
+            'brand_filters' => array(),
+        );
+    }
+
+    private function extract_brand_filters($query, $categories, $products)
+    {
+        $query = strtolower((string) $query);
+        $tokens = $this->get_catalog_significant_tokens($query);
+        $brand_counts = array();
+        foreach ((array) $products as $product) {
+            foreach ((array) (isset($product['categories']) ? $product['categories'] : array()) as $cat_name) {
+                $cat_name = trim((string) $cat_name);
+                if ($cat_name === '') {
+                    continue;
+                }
+                $brand_counts[strtolower($cat_name)] = isset($brand_counts[strtolower($cat_name)]) ? $brand_counts[strtolower($cat_name)] + 1 : 1;
+            }
+        }
+
+        $filters = array();
+        foreach ((array) $categories as $category) {
+            if (isset($category['parent']) && (int) $category['parent'] !== 0) {
+                continue;
+            }
+            $name = trim((string) (isset($category['name']) ? $category['name'] : ''));
+            $slug = trim((string) (isset($category['slug']) ? $category['slug'] : ''));
+            if ($name === '') {
+                continue;
+            }
+            if ((int) (isset($brand_counts[strtolower($name)]) ? $brand_counts[strtolower($name)] : 0) < 4) {
+                continue;
+            }
+            foreach ($tokens as $token) {
+                if ($token !== '' && (strtolower($name) === strtolower($token) || strtolower($slug) === strtolower($token) || strpos(strtolower($name), strtolower($token)) !== false)) {
+                    $filters[] = $name;
+                    break;
+                }
+                if ($token !== '' && strlen($token) >= 5) {
+                    $distance_name = levenshtein($token, strtolower($name));
+                    $distance_slug = $slug !== '' ? levenshtein($token, strtolower($slug)) : 99;
+                    if ($distance_name <= 2 || $distance_slug <= 2) {
+                        $filters[] = $name;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return array_values(array_unique($filters));
+    }
+
+    private function get_business_info_reply()
+    {
+        $contact = $this->get_bot_contact_details();
+        $parts = array();
+        $name = trim((string) $this->get_setting('business_name', 'FS Fine Watches'));
+        if ($name !== '') {
+            $parts[] = $name;
+        }
+        if (! empty($contact['location'])) {
+            $parts[] = sprintf(__('Location: %s', 'carbon-repro-widget'), $contact['location']);
+        }
+        if (! empty($contact['phone'])) {
+            $parts[] = sprintf(__('Phone: %s', 'carbon-repro-widget'), $contact['phone']);
+        }
+        if (! empty($contact['email'])) {
+            $parts[] = sprintf(__('Email: %s', 'carbon-repro-widget'), $contact['email']);
+        }
+
+        if (empty($parts)) {
+            return __('Sure. I can help with store details. Please ask for location, phone, or email and I will share it.', 'carbon-repro-widget');
+        }
+
+        return __('Sure — here are our store details:', 'carbon-repro-widget') . "\n" . implode("\n", $parts);
+    }
+
     private function get_static_intent_reply($query, $lead, $catalog_suggestions = array())
     {
         $query = trim((string) $query);
@@ -3250,13 +3666,51 @@ final class Carbon_Repro_Instant_Actions_Widget
             return __('We would be happy to help. Use the buttons below to contact the store directly.', 'carbon-repro-widget');
         }
 
+        if (preg_match('/\b(what brands|which brands|brands? do you (sell|carry)|what .* brands|brands (do you have|available))\b/i', $query)) {
+            $index = get_option(self::CATALOG_INDEX_OPTION_KEY, array());
+            $categories = isset($index['categories']) && is_array($index['categories']) ? $index['categories'] : array();
+            $brands = array();
+
+            foreach ($categories as $category) {
+                if (empty($category['name'])) {
+                    continue;
+                }
+                if (isset($category['parent']) && (int) $category['parent'] !== 0) {
+                    continue;
+                }
+                $label = trim((string) $category['name']);
+                if ($label === '' || strcasecmp($label, 'uncategorized') === 0) {
+                    continue;
+                }
+                $brands[] = $label;
+            }
+
+            $brands = array_values(array_unique($brands));
+            sort($brands, SORT_NATURAL | SORT_FLAG_CASE);
+            $brands = array_slice($brands, 0, 18);
+
+            if (! empty($brands)) {
+                return sprintf(
+                    __('We carry brands including %s. Tell me which brand you like (for example Rolex or Cartier) and I will show you the best matches.', 'carbon-repro-widget'),
+                    implode(', ', $brands)
+                );
+            }
+
+            return __('We carry a curated selection of luxury watch brands. Tell me the brand you are interested in (for example Rolex, Cartier, Omega) and I will share matching inventory.', 'carbon-repro-widget');
+        }
+
         return '';
     }
 
     private function maybe_apply_chat_limit($conversation_id, $transcript, $lead, $meta_store)
     {
+        $limit = $this->get_chat_message_limit();
+        if ($limit <= 0) {
+            return array('triggered' => false);
+        }
+
         $user_count = $this->count_user_messages($transcript);
-        if ($user_count < $this->get_chat_message_limit()) {
+        if ($user_count < $limit) {
             return array('triggered' => false);
         }
 
@@ -3474,16 +3928,59 @@ final class Carbon_Repro_Instant_Actions_Widget
         return isset($svgs[$icon]) ? $svgs[$icon] : $svgs['chat'];
     }
 
-    private function build_product_search_url($query)
+    private function parse_price_constraints($query)
     {
-        return add_query_arg(
-            array(
-                's' => $query,
-                'post_type' => 'product',
-                'dgwt_wcas' => '1',
-            ),
-            home_url('/')
+        $text = strtolower((string) $query);
+        $result = array(
+            'min_price' => null,
+            'max_price' => null,
+            'has_price_filter' => false,
         );
+
+        if (preg_match('/\bbetween\s+\$?(\d{2,6}(?:[.,]\d{1,2})?)\s*(?:to|and|-)\s*\$?(\d{2,6}(?:[.,]\d{1,2})?)\b/i', $text, $m)) {
+            $a = (float) str_replace(',', '', $m[1]);
+            $b = (float) str_replace(',', '', $m[2]);
+            $result['min_price'] = min($a, $b);
+            $result['max_price'] = max($a, $b);
+            $result['has_price_filter'] = true;
+            return $result;
+        }
+
+        if (preg_match('/\b(?:below|under|less than|max(?:imum)?(?: price)?|upto|up to)\s+\$?(\d{2,6}(?:[.,]\d{1,2})?)\b/i', $text, $m)) {
+            $result['max_price'] = (float) str_replace(',', '', $m[1]);
+            $result['has_price_filter'] = true;
+            return $result;
+        }
+
+        if (preg_match('/\b(?:above|over|more than|min(?:imum)?(?: price)?|starting from)\s+\$?(\d{2,6}(?:[.,]\d{1,2})?)\b/i', $text, $m)) {
+            $result['min_price'] = (float) str_replace(',', '', $m[1]);
+            $result['has_price_filter'] = true;
+            return $result;
+        }
+
+        return $result;
+    }
+
+    private function build_product_search_url($keyword = '', $price_filter = array())
+    {
+        $args = array();
+        $keyword = trim((string) $keyword);
+        $price_filter = is_array($price_filter) ? $price_filter : array();
+        $min = isset($price_filter['min_price']) ? $price_filter['min_price'] : null;
+        $max = isset($price_filter['max_price']) ? $price_filter['max_price'] : null;
+
+        if ($keyword !== '') {
+            $args['s'] = $keyword;
+        }
+        $args['post_type'] = 'product';
+        if ($min !== null && $min !== '') {
+            $args['min_price'] = (int) floor((float) $min);
+        }
+        if ($max !== null && $max !== '') {
+            $args['max_price'] = (int) floor((float) $max);
+        }
+
+        return add_query_arg($args, home_url('/shop/'));
     }
 
     private function extract_catalog_intent_query($query)
@@ -3497,6 +3994,9 @@ final class Carbon_Repro_Instant_Actions_Widget
         $query = preg_replace('/\b(i mean|meant|mean)\b/i', '', $query);
         $query = preg_replace('/\b(can you|could you|please|tell me|show me|find me|help me find)\b/i', '', $query);
         $query = preg_replace('/\b(do you have|are you carrying|have you got|looking for|searching for|need|want)\b/i', '', $query);
+        $query = preg_replace('/\b(with|has|having)\s+(the\s+)?(following|this)\s+(sku|ref|reference|description)\b/i', '', $query);
+        $query = preg_replace('/\b(sku|ref|reference number|model number)\s*(=|:)?\s*/i', ' ', $query);
+        $query = preg_replace('/\b(i\s+want\s+the\s+watch|watch\s+with|which\s+has|that\s+has)\b/i', ' ', $query);
         $query = preg_replace('/\bthe\b/i', ' ', $query);
         $query = preg_replace('/[^a-z0-9\-\s]/i', ' ', $query);
         $query = preg_replace('/\s+/', ' ', $query);
@@ -3611,7 +4111,8 @@ final class Carbon_Repro_Instant_Actions_Widget
             'i', 'im', 'am', 'looking', 'look', 'for', 'the', 'a', 'an', 'do', 'you', 'offer',
             'offers', 'have', 'has', 'with', 'and', 'or', 'to', 'of', 'in', 'on', 'at', 'is',
             'are', 'me', 'my', 'we', 'our', 'your', 'can', 'could', 'would', 'should', 'this',
-            'that', 'these', 'those', 'watch', 'watches', 'model', 'models', 'please', 'need'
+            'that', 'these', 'those', 'watch', 'watches', 'model', 'models', 'please', 'need',
+            'bro', 'buddy', 'yaar', 'sir', 'hey', 'hello', 'hi'
         );
 
         $filtered = array_values(array_filter($tokens, function ($token) use ($stopwords) {
@@ -3680,15 +4181,52 @@ final class Carbon_Repro_Instant_Actions_Widget
             );
         }
 
+        $price_filter = $this->parse_price_constraints($original_query);
+        $brand_filters = $this->extract_brand_filters($original_query, $categories, $products);
+        if (! empty($price_filter['has_price_filter']) || $intent_type === 'product_lookup' || $intent_type === 'generic_catalog') {
+            $live_products = $this->get_live_catalog_products($original_query, $price_filter, $categories, $brand_filters, 120);
+            if (! empty($live_products)) {
+                $products = $live_products;
+            }
+        }
+
         preg_match_all('/[A-Za-z0-9\-_]{2,}/', $query, $matches);
         $tokens = array_values(array_unique(array_map('strtolower', $matches[0])));
         $significant_tokens = $this->get_catalog_significant_tokens($query);
         $query_lower = strtolower($query);
         $has_numeric_token = (bool) preg_match('/\d{3,}/', $query);
         $is_generic_query = count($tokens) <= 2 && ! $has_numeric_token;
-
+        $sku_tokens = array_values(array_filter($tokens, function ($token) {
+            return (bool) preg_match('/[a-z]{1,4}\d{5,}|\d{5,}/i', (string) $token);
+        }));
         $scored_products = array();
         foreach ($products as $product) {
+            if (! empty($brand_filters)) {
+                $product_categories = array_map('strtolower', (array) (isset($product['categories']) ? $product['categories'] : array()));
+                $brand_match = false;
+                foreach ($brand_filters as $brand_filter) {
+                    if (in_array(strtolower((string) $brand_filter), $product_categories, true)) {
+                        $brand_match = true;
+                        break;
+                    }
+                }
+                if (! $brand_match) {
+                    continue;
+                }
+            }
+            if (! empty($price_filter['has_price_filter'])) {
+                $price_value = $this->parse_price_value(isset($product['price']) ? $product['price'] : '');
+                if ($price_value === null) {
+                    continue;
+                }
+                if ($price_filter['min_price'] !== null && $price_value < (float) $price_filter['min_price']) {
+                    continue;
+                }
+                if ($price_filter['max_price'] !== null && $price_value > (float) $price_filter['max_price']) {
+                    continue;
+                }
+            }
+
             $searchable = isset($product['searchable_text']) ? strtolower((string) $product['searchable_text']) : '';
             $name = ! empty($product['name']) ? strtolower((string) $product['name']) : '';
             $sku = ! empty($product['sku']) ? strtolower((string) $product['sku']) : '';
@@ -3744,6 +4282,24 @@ final class Carbon_Repro_Instant_Actions_Widget
         usort($scored_products, function ($left, $right) {
             return $right['score'] <=> $left['score'];
         });
+
+        if (! empty($sku_tokens)) {
+            $sku_exact_matches = array();
+            foreach ($scored_products as $row) {
+                $sku = isset($row['product']['sku']) ? strtolower(trim((string) $row['product']['sku'])) : '';
+                if ($sku !== '' && in_array($sku, $sku_tokens, true)) {
+                    $row['score'] += 80;
+                    $sku_exact_matches[] = $row;
+                }
+            }
+            if (! empty($sku_exact_matches)) {
+                usort($sku_exact_matches, function ($left, $right) {
+                    return $right['score'] <=> $left['score'];
+                });
+                $scored_products = $sku_exact_matches;
+                $is_generic_query = false;
+            }
+        }
 
         $cards = array();
         $links = array();
@@ -3828,7 +4384,8 @@ final class Carbon_Repro_Instant_Actions_Widget
 
         $has_strong_product_match = false;
         foreach ($scored_products as $row) {
-            if (! empty($row['strong_match']) || (! empty($significant_tokens) && ! empty($row['title_token_matches']) && $row['title_token_matches'] >= count($significant_tokens))) {
+            $minimum_token_match = ! empty($significant_tokens) ? min(2, count($significant_tokens)) : 1;
+            if (! empty($row['strong_match']) || (! empty($row['title_token_matches']) && $row['title_token_matches'] >= $minimum_token_match)) {
                 $has_strong_product_match = true;
                 break;
             }
@@ -3844,47 +4401,38 @@ final class Carbon_Repro_Instant_Actions_Widget
                 $product = $row['product'];
                 $cards[] = array(
                     'type' => 'product',
+                    'id' => isset($product['id']) ? (int) $product['id'] : 0,
                     'url' => isset($product['url']) ? $product['url'] : '',
                     'title' => isset($product['name']) ? $product['name'] : '',
                     'price' => isset($product['price']) ? $product['price'] : '',
                     'category' => ! empty($product['categories']) ? implode(', ', array_slice((array) $product['categories'], 0, 2)) : '',
+                    'description' => isset($product['short_description']) ? $product['short_description'] : '',
                     'image' => isset($product['image']) ? $product['image'] : '',
                 );
             }
         }
 
-        if (count($scored_products) > 4) {
+        if (count($scored_products) > 4 && ! empty($price_filter['has_price_filter'])) {
             $links[] = array(
-                'label' => __('View All Matching Products', 'carbon-repro-widget'),
-                'url' => $this->build_product_search_url($query),
+                'label' => __('View More', 'carbon-repro-widget'),
+                'url' => $this->build_product_search_url('', $price_filter),
             );
         }
 
-        $seen_link_urls = array();
-        foreach ($links as $existing_link) {
-            if (! empty($existing_link['url'])) {
-                $seen_link_urls[] = $this->normalize_catalog_match_url($existing_link['url']);
+        if (! empty($brand_filters) && count($brand_filters) === 1) {
+            foreach ($categories as $category) {
+                if (! empty($category['name']) && ! empty($category['url']) && strcasecmp((string) $category['name'], (string) $brand_filters[0]) === 0) {
+                    $links[] = array(
+                        'label' => sprintf(__('View All %s', 'carbon-repro-widget'), (string) $brand_filters[0]),
+                        'url' => (string) $category['url'],
+                    );
+                    break;
+                }
             }
         }
 
-        foreach ($matched_categories as $matched_category) {
-            $normalized_category_url = $this->normalize_catalog_match_url(isset($matched_category['url']) ? $matched_category['url'] : '');
-            if ($normalized_category_url === '' || in_array($normalized_category_url, $seen_link_urls, true)) {
-                continue;
-            }
-            $links[] = array(
-                'label' => sprintf(__('View All %s', 'carbon-repro-widget'), isset($matched_category['name']) ? $matched_category['name'] : __('Collection', 'carbon-repro-widget')),
-                'url' => $matched_category['url'],
-            );
-            $seen_link_urls[] = $normalized_category_url;
-        }
-
-        if ($is_generic_query && count($significant_tokens) === 1 && $brand_token !== '') {
-            $links[] = array(
-                'label' => sprintf(__('View All %s', 'carbon-repro-widget'), $brand_token),
-                'url' => $this->build_product_search_url($brand_token),
-            );
-        }
+        $cards = $this->dedupe_catalog_cards($cards);
+        $links = $this->dedupe_catalog_links($links);
 
         return array(
             'cards' => array_slice($cards, 0, 4),
@@ -3896,7 +4444,48 @@ final class Carbon_Repro_Instant_Actions_Widget
             'correction' => (empty($scored_products) && ! $category_match) ? $this->get_catalog_correction_suggestion($query, $products, $categories) : '',
             'intent_type' => $intent_type,
             'model_names' => array_slice(array_values(array_unique($model_names)), 0, 8),
+            'price_filter' => $price_filter,
+            'brand_filters' => $brand_filters,
         );
+    }
+
+    private function dedupe_catalog_cards($cards)
+    {
+        $cards = is_array($cards) ? $cards : array();
+        $seen = array();
+        $unique = array();
+
+        foreach ($cards as $card) {
+            $url = isset($card['url']) ? $this->normalize_catalog_match_url($card['url']) : '';
+            $title = isset($card['title']) ? strtolower(trim((string) $card['title'])) : '';
+            $type = isset($card['type']) ? strtolower(trim((string) $card['type'])) : 'product';
+            $key = $url !== '' ? $type . '|' . $url : $type . '|' . $title;
+            if ($key === '' || isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $unique[] = $card;
+        }
+
+        return $unique;
+    }
+
+    private function dedupe_catalog_links($links)
+    {
+        $links = is_array($links) ? $links : array();
+        $seen = array();
+        $unique = array();
+
+        foreach ($links as $link) {
+            $url = isset($link['url']) ? $this->normalize_catalog_match_url($link['url']) : '';
+            if ($url === '' || isset($seen[$url])) {
+                continue;
+            }
+            $seen[$url] = true;
+            $unique[] = $link;
+        }
+
+        return $unique;
     }
 
     private function should_use_catalog_fast_path($query, $suggestions)
@@ -3929,10 +4518,13 @@ final class Carbon_Repro_Instant_Actions_Widget
         }
 
         $cards = isset($suggestions['cards']) && is_array($suggestions['cards']) ? $suggestions['cards'] : array();
+        $links = isset($suggestions['links']) && is_array($suggestions['links']) ? $suggestions['links'] : array();
         $has_multiple = ! empty($suggestions['has_multiple_products']);
         $is_generic = ! empty($suggestions['is_generic_query']);
         $intent_type = isset($suggestions['intent_type']) ? $suggestions['intent_type'] : 'unknown';
         $model_names = isset($suggestions['model_names']) && is_array($suggestions['model_names']) ? $suggestions['model_names'] : array();
+        $price_filter = isset($suggestions['price_filter']) && is_array($suggestions['price_filter']) ? $suggestions['price_filter'] : array();
+        $has_price_filter = ! empty($price_filter['has_price_filter']);
 
         if ($intent_type === 'model_overview' && ! empty($model_names)) {
             return sprintf(
@@ -3947,20 +4539,42 @@ final class Carbon_Repro_Instant_Actions_Widget
         }
 
         if (empty($cards)) {
-            if (! empty($suggestions['correction'])) {
+            if ($has_price_filter) {
+                $brand_text = '';
+                if (! empty($suggestions['brand_filters']) && is_array($suggestions['brand_filters'])) {
+                    $brand_text = implode(', ', array_slice((array) $suggestions['brand_filters'], 0, 2)) . ' ';
+                }
+                return sprintf(__('Currently, we do not have %swatches in that price range. Would you like to see slightly higher options?', 'carbon-repro-widget'), $brand_text);
+            }
+            if (! empty($links)) {
                 return sprintf(
-                    __('I could not find a direct match for %s. Did you mean %s?', 'carbon-repro-widget'),
-                    $query,
-                    $suggestions['correction']
+                    __('I found the closest collection link(s) for %s below. If you share a model name, dial color, size, or reference number, I can narrow it down to specific inventory.', 'carbon-repro-widget'),
+                    isset($suggestions['intent_query']) && $suggestions['intent_query'] !== '' ? $suggestions['intent_query'] : $query
                 );
             }
-            return $reply !== '' ? $reply : sprintf(
-                __('I could not find a direct match for %s. If you have a model name, brand, or reference number, send it and I will narrow it down.', 'carbon-repro-widget'),
-                $query
-            );
+            return $reply !== '' ? $reply : __('I could not find an exact match, but I can help you quickly if you share a brand, model name, dial color, size, or reference number.', 'carbon-repro-widget');
+        }
+
+        if ($has_price_filter) {
+            if (isset($price_filter['min_price']) && $price_filter['min_price'] !== null && isset($price_filter['max_price']) && $price_filter['max_price'] !== null) {
+                return sprintf(__('Here are some watches between $%1$s and $%2$s.', 'carbon-repro-widget'), number_format((float) $price_filter['min_price'], 0), number_format((float) $price_filter['max_price'], 0));
+            }
+            if (isset($price_filter['max_price']) && $price_filter['max_price'] !== null) {
+                return sprintf(__('Here are some watches under $%s.', 'carbon-repro-widget'), number_format((float) $price_filter['max_price'], 0));
+            }
+            if (isset($price_filter['min_price']) && $price_filter['min_price'] !== null) {
+                return sprintf(__('Here are some watches above $%s.', 'carbon-repro-widget'), number_format((float) $price_filter['min_price'], 0));
+            }
         }
 
         if ($is_generic) {
+            if (! empty($suggestions['brand_filters']) && count($suggestions['brand_filters']) === 1) {
+                return sprintf(
+                    __('Yes, we do have %s options. I have shared a few matching products below, and you can also use the %s collection button for full inventory.', 'carbon-repro-widget'),
+                    isset($suggestions['intent_query']) && $suggestions['intent_query'] !== '' ? $suggestions['intent_query'] : $query,
+                    $suggestions['brand_filters'][0]
+                );
+            }
             return sprintf(
                 __('Yes, we do have %s options. I have shared a few matching products below, and you can use the collection links to browse more. If you have a specific model or reference number, send it and I can narrow it down further.', 'carbon-repro-widget'),
                 isset($suggestions['intent_query']) && $suggestions['intent_query'] !== '' ? $suggestions['intent_query'] : $query
@@ -3968,10 +4582,7 @@ final class Carbon_Repro_Instant_Actions_Widget
         }
 
         if ($has_multiple) {
-            return sprintf(
-                __('Yes, we found a few matching results for %s. I have shown the closest options below, and you can use the links to view the full matching results.', 'carbon-repro-widget'),
-                isset($suggestions['intent_query']) && $suggestions['intent_query'] !== '' ? $suggestions['intent_query'] : $query
-            );
+            return __('Sure! Here are a few matching watches.', 'carbon-repro-widget');
         }
 
         return $reply;
@@ -4731,7 +5342,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             'chatbot_enabled' => '0',
             'chatbot_title' => 'AI Assistant',
             'chatbot_welcome_message' => 'Thanks. I have your details. What would you like help with today?',
-            'chat_message_limit' => 7,
+            'chat_message_limit' => 0,
             'chat_limit_message' => '',
             'notification_email' => get_option('admin_email'),
             'notification_sms_number' => '',
