@@ -53,6 +53,38 @@ html[data-widget-hidden="true"] .watch-chat-popup {
   transition: bottom 0.3s ease;
 }
 
+/* --------------------------------------------------------------------------
+   3a. Theme isolation — block WordPress theme CSS from bleeding into the widget
+   -------------------------------------------------------------------------- */
+#watchWidget button,
+#watchWidget input[type="button"],
+#watchWidget input[type="submit"] {
+  text-transform: none !important;
+  font-family: inherit !important;
+  letter-spacing: normal !important;
+  line-height: normal !important;
+  box-sizing: border-box !important;
+}
+#watchWidget a {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+#watchWidget .watch-chat-message-assistant a,
+#watchWidget .watch-chat-message-assistant a:link,
+#watchWidget .watch-chat-message-assistant a:visited {
+  color: var(--watch-primary) !important;
+  text-decoration: underline !important;
+}
+#watchWidget textarea,
+#watchWidget input[type="text"],
+#watchWidget input[type="email"],
+#watchWidget input[type="tel"],
+#watchWidget input[type="url"],
+#watchWidget input[type="number"] {
+  resize: none !important;
+  font-family: inherit !important;
+}
+
 /* Back-to-top coexistence */
 .lqd-back-to-top.is-visible {
   z-index: 99990 !important;
@@ -611,12 +643,13 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
    -------------------------------------------------------------------------- */
 .watch-chat-message {
   max-width: 70%;
+  width: fit-content;
   padding: 11px 14px;
   border-radius: 18px;
   font-size: 14px;
   line-height: 1.55;
   white-space: pre-wrap;
-  display: inline-flex;
+  display: flex;
   align-items: flex-start;
   gap: 8px;
   word-break: break-word;
@@ -631,16 +664,16 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
 }
 
 .watch-chat-message-user {
-  margin-left: auto;
+  align-self: flex-end;
   background: var(--watch-primary);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
 
 .watch-chat-message-assistant {
-  margin-right: auto;
+  align-self: flex-start;
   background: #fff;
-  color: var(--watch-text);
+  color: var(--watch-text) !important;
   border: 1px solid rgba(0,0,0,.07);
   border-bottom-left-radius: 4px;
   box-shadow: 0 2px 8px rgba(0,0,0,.05);
@@ -955,7 +988,7 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   width: 100%;
   min-height: 28px;
   max-height: 120px;
-  resize: none;
+  resize: none !important;
   border: 0 !important;
   outline: 0 !important;
   box-shadow: none !important;
