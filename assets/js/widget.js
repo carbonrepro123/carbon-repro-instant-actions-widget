@@ -430,15 +430,16 @@
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       link.innerHTML =
-        '<div class="watch-chat-card-image">' + (card.image ? '<img src="' + card.image + '" alt="">' : '<span class="watch-chat-card-placeholder"></span>') + '</div>' +
-        '<div class="watch-chat-card-body">' +
+        '<span class="watch-chat-card-image">' + (card.image ? '<img src="' + card.image + '" alt="">' : '<span class="watch-chat-card-placeholder"></span>') + '</span>' +
+        '<span class="watch-chat-card-body">' +
           '<strong>' + (card.title || '') + '</strong>' +
-          '<div class="watch-chat-card-meta">' +
+          (card.description ? '<span class="watch-chat-card-description">' + card.description + '</span>' : '') +
+          '<span class="watch-chat-card-meta">' +
             (card.category ? '<span class="watch-chat-card-category">' + card.category + '</span>' : '<span class="watch-chat-card-category">&nbsp;</span>') +
             (card.price ? '<em>' + card.price + '</em>' : '<em>&nbsp;</em>') +
-          '</div>' +
-          '<div class="watch-chat-card-cta">' + (card.type === 'category' ? 'View Category' : 'View Product') + '</div>' +
-        '</div>';
+          '</span>' +
+          '<span class="watch-chat-card-cta">' + (card.type === 'category' ? 'View Category' : 'View Product') + '</span>' +
+        '</span>';
       wrap.appendChild(link);
     });
     shell.appendChild(wrap);
