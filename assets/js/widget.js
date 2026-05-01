@@ -15,7 +15,6 @@
   var pendingWidgetSubmission = false;
   var chatConversationId = null;
   var chatInitialized = false;
-  var chatState = { isChatStarted: false };
   var chatMessageCount = 0;
   var chatPollTimer = null;
   var toastTimer = null;
@@ -278,6 +277,26 @@
     if (elements.chatMessages) {
       elements.chatMessages.style.display = show ? 'none' : 'flex';
     }
+    if (elements.chatForm) {
+      elements.chatForm.style.display = show ? 'none' : 'flex';
+    }
+    if (elements.chatHistory) {
+      elements.chatHistory.style.display = show ? 'none' : elements.chatHistory.style.display;
+    }
+  }
+
+  function clearLeadInputs() {
+    var elements = getElements();
+    if (elements.chatLeadName) { elements.chatLeadName.value = ''; }
+    if (elements.chatLeadEmail) { elements.chatLeadEmail.value = ''; }
+    if (elements.chatLeadPhone) { elements.chatLeadPhone.value = ''; }
+    if (elements.chatLeadNeed) { elements.chatLeadNeed.value = ''; }
+    if (elements.chatConsent) { elements.chatConsent.checked = false; }
+    if (elements.chatSmsConsent) { elements.chatSmsConsent.checked = false; }
+    if (elements.chatWhatsappConsent) { elements.chatWhatsappConsent.checked = false; }
+    setConsentPreference(false);
+    setSmsConsentPreference(false);
+    setWhatsappConsentPreference(false);
   }
 
   function populateLeadInputs() {
@@ -744,11 +763,9 @@
         }
 
         chatInitialized = true;
-        chatState.isChatStarted = true;
         chatMessageCount = restoredMessages.length;
         markConversationRead(chatConversationId);
         toggleHistoryPanel(false);
-        applyChatUiState();
         startChatPolling();
       });
       wrapper.appendChild(item);
@@ -785,9 +802,10 @@
 
     chatConversationId = null;
     chatInitialized = false;
-    chatState.isChatStarted = false;
     chatMessageCount = 0;
-    setCurrentChatSession({ conversationId: null, messages: [], lead: getStoredLead() });
+    setStoredLead(null);
+    clearLeadInputs();
+    setCurrentChatSession({ conversationId: null, messages: [], lead: null });
     markConversationRead(null);
 
     var elements = getElements();
@@ -1149,29 +1167,6 @@
     });
   }
 
-  function applyChatUiState() {
-    var elements = getElements();
-    if (!elements.chat) { return; }
-
-    var hasArchives = getArchivedChats().length > 0;
-    var hasMessages = !!(elements.chatMessages &&
-      elements.chatMessages.querySelector('.watch-chat-message:not(.watch-chat-typing)'));
-
-    // Previous Chats button: only before chat starts, only if archives exist
-    if (elements.chatPreviousBtn) {
-      elements.chatPreviousBtn.style.display = (!chatState.isChatStarted && hasArchives) ? '' : 'none';
-    }
-    // Reset button: only after chat started AND has at least one real message
-    if (elements.chatResetBtn) {
-      elements.chatResetBtn.style.display = (chatState.isChatStarted && hasMessages) ? '' : 'none';
-    }
-    // Composer (input + send): only visible after chat started
-    var composer = elements.chat.querySelector('.watch-chat-composer');
-    if (composer) {
-      composer.style.display = chatState.isChatStarted ? '' : 'none';
-    }
-  }
-
   function initializeChat() {
     if (!chatEnabled) {
       return;
@@ -1194,20 +1189,12 @@
         });
       }
       chatInitialized = true;
-      chatState.isChatStarted = true;
       chatMessageCount = session.messages.length;
       markConversationRead(chatConversationId);
-      applyChatUiState();
       return;
     }
 
-    toggleIntake(settings.intakeRequired === '1');
-    if (settings.intakeRequired !== '1') {
-      addAssistantReply(welcomeMessage, '', null);
-      chatInitialized = true;
-      chatState.isChatStarted = true;
-    }
-    applyChatUiState();
+    toggleIntake(true);
   }
 
   function startChatPolling() {
@@ -1473,9 +1460,7 @@
       if (elementsNow.chatMessages) {
         elementsNow.chatMessages.innerHTML = '';
       }
-      chatState.isChatStarted = true;
       toggleIntake(false);
-      applyChatUiState();
       if (lead.looking_for) {
         addChatMessage('user', lead.looking_for);
       }
@@ -1625,7 +1610,6 @@
     }).finally(function () {
       chatRequestInFlight = false;
       setChatLoading(false);
-      applyChatUiState();
       if (elements.chatInput) {
         elements.chatInput.focus();
       }
@@ -1666,10 +1650,6 @@
     if (!elements.widget) {
       return;
     }
-
-    // Clear current session on every page load so chat always starts fresh.
-    // Previous conversations remain accessible via the Previous Chats button.
-    try { window.localStorage.removeItem(SESSION_KEY); } catch (e) {}
 
     renderPendingUploads();
     updateUnreadBadge();
