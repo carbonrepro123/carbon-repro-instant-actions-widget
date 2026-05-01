@@ -1855,18 +1855,40 @@ final class Carbon_Repro_Instant_Actions_Widget
                 );
             }
         } elseif ($intent === 'HUMAN_AGENT_REQUEST') {
-            $result['reply'] = __('I can connect you with a real agent. Please share your name, email, and phone.', 'carbon-repro-widget');
-            $this->set_chat_context(
-                $conversation_id,
-                'HUMAN_AGENT_REQUEST',
-                $message,
-                array(),
-                array(
-                    'conversation_stage' => 'awaiting_contact_details',
-                    'last_brand' => ! empty($entities['brand_explicit']) ? (string) $entities['brand'] : (isset($context['last_brand']) ? (string) $context['last_brand'] : ''),
-                    'last_price_range' => (! empty($entities['price_explicit']) || ! empty($entities['has_price_filter'])) ? array('min_price' => $entities['min_price'], 'max_price' => $entities['max_price']) : (isset($context['last_price_range']) && is_array($context['last_price_range']) ? $context['last_price_range'] : array('min_price' => null, 'max_price' => null)),
-                )
-            );
+            $has_lead = ! empty($lead['name']) && (! empty($lead['email']) || ! empty($lead['phone']));
+            if ($has_lead) {
+                $contact = $this->get_bot_contact_details();
+                $result['reply'] = sprintf(
+                    __("I've notified our team and a real agent will be with you shortly!\n\nIn the meantime, you can also reach us directly:\nPhone: %s\nEmail: %s", 'carbon-repro-widget'),
+                    ! empty($contact['phone']) ? $contact['phone'] : '713-705-6097',
+                    ! empty($contact['email']) ? $contact['email'] : 'info@fsfinewatches.com'
+                );
+                $assistant_meta = $this->build_assistant_meta(array('cards' => array(), 'links' => array()), 'contact', true);
+                $this->set_chat_context(
+                    $conversation_id,
+                    'HUMAN_AGENT_REQUEST',
+                    $message,
+                    array(),
+                    array(
+                        'conversation_stage' => 'handoff_confirmed',
+                        'last_brand' => ! empty($entities['brand_explicit']) ? (string) $entities['brand'] : (isset($context['last_brand']) ? (string) $context['last_brand'] : ''),
+                        'last_price_range' => (! empty($entities['price_explicit']) || ! empty($entities['has_price_filter'])) ? array('min_price' => $entities['min_price'], 'max_price' => $entities['max_price']) : (isset($context['last_price_range']) && is_array($context['last_price_range']) ? $context['last_price_range'] : array('min_price' => null, 'max_price' => null)),
+                    )
+                );
+            } else {
+                $result['reply'] = __('I can connect you with a real agent. Please share your name, email, and phone so we can reach you.', 'carbon-repro-widget');
+                $this->set_chat_context(
+                    $conversation_id,
+                    'HUMAN_AGENT_REQUEST',
+                    $message,
+                    array(),
+                    array(
+                        'conversation_stage' => 'awaiting_contact_details',
+                        'last_brand' => ! empty($entities['brand_explicit']) ? (string) $entities['brand'] : (isset($context['last_brand']) ? (string) $context['last_brand'] : ''),
+                        'last_price_range' => (! empty($entities['price_explicit']) || ! empty($entities['has_price_filter'])) ? array('min_price' => $entities['min_price'], 'max_price' => $entities['max_price']) : (isset($context['last_price_range']) && is_array($context['last_price_range']) ? $context['last_price_range'] : array('min_price' => null, 'max_price' => null)),
+                    )
+                );
+            }
         } elseif ($intent === 'GREETING') {
             $result['reply'] = __('Hi! How can I help you today?', 'carbon-repro-widget');
         } elseif ($intent === 'GRATITUDE') {

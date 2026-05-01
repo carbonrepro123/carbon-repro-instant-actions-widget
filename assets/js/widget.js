@@ -385,7 +385,9 @@
     if (!container || !row) {
       return;
     }
-    container.scrollTop = row.offsetTop;
+    var rowRect = row.getBoundingClientRect();
+    var containerRect = container.getBoundingClientRect();
+    container.scrollTop = container.scrollTop + (rowRect.top - containerRect.top);
   }
 
   function renderPendingUploads() {
@@ -702,7 +704,7 @@
       return;
     }
 
-    var messages = Array.prototype.map.call(elements.chatMessages.querySelectorAll('.watch-chat-message-row'), function (node) {
+    var messages = Array.prototype.map.call(elements.chatMessages.querySelectorAll('.watch-chat-message-row:not(.watch-chat-typing)'), function (node) {
       var meta = null;
       try {
         meta = node.dataset && node.dataset.messageMeta ? JSON.parse(node.dataset.messageMeta) : null;
@@ -793,6 +795,7 @@
 
     if (show) {
       renderArchivedChats();
+      elements.chatHistory.style.display = '';
       elements.chatHistory.classList.add('active');
       elements.chatHistory.setAttribute('aria-hidden', 'false');
     } else {
@@ -827,6 +830,12 @@
 
     initializeChat();
     toggleHistoryPanel(false);
+
+    var elementsAfter = getElements();
+    if (elementsAfter.chatResetBtn) {
+      elementsAfter.chatResetBtn.style.display = 'none';
+    }
+
     startChatPolling();
   }
 
@@ -1547,6 +1556,10 @@
 
     var elements = getElements();
     if (!elements.chatInput || !chatNonce) {
+      return;
+    }
+
+    if (chatRequestInFlight) {
       return;
     }
 
