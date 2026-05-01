@@ -773,11 +773,11 @@ final class Carbon_Repro_Instant_Actions_Widget
                         </div>
                         <div class="watch-chat-history-list" id="watchChatHistoryList"></div>
                     </div>
+                    <div class="watch-chat-toolbar" id="watchChatToolbar">
+                        <button type="button" class="watch-chat-tool-btn" id="watchChatPreviousBtn"><?php esc_html_e('Previous Chats', 'carbon-repro-widget'); ?></button>
+                        <button type="button" class="watch-chat-tool-btn" id="watchChatResetBtn"><?php esc_html_e('Reset Chat', 'carbon-repro-widget'); ?></button>
+                    </div>
                     <form class="watch-chat-form" id="watchChatForm">
-                        <div class="watch-chat-toolbar">
-                            <button type="button" class="watch-chat-tool-btn" id="watchChatPreviousBtn"><?php esc_html_e('Previous Chats', 'carbon-repro-widget'); ?></button>
-                            <button type="button" class="watch-chat-tool-btn" id="watchChatResetBtn"><?php esc_html_e('Reset Chat', 'carbon-repro-widget'); ?></button>
-                        </div>
                         <div class="watch-chat-composer">
                             <div class="watch-chat-attachments" id="watchChatAttachments" aria-live="polite"></div>
                             <div class="watch-chat-input-wrap">
@@ -3836,7 +3836,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             if ($name === '') {
                 continue;
             }
-            if ((int) (isset($brand_counts[strtolower($name)]) ? $brand_counts[strtolower($name)] : 0) < 4) {
+            if ((int) (isset($brand_counts[strtolower($name)]) ? $brand_counts[strtolower($name)] : 0) < 1) {
                 continue;
             }
             foreach ($tokens as $token) {
@@ -4660,13 +4660,34 @@ final class Carbon_Repro_Instant_Actions_Widget
         if (! empty($brand_filters) && count($brand_filters) === 1) {
             foreach ($categories as $category) {
                 if (! empty($category['name']) && ! empty($category['url']) && strcasecmp((string) $category['name'], (string) $brand_filters[0]) === 0) {
-            $links[] = array(
+                    $links[] = array(
                         'label' => sprintf(__('View All %s', 'carbon-repro-widget'), (string) $brand_filters[0]),
                         'url' => (string) $category['url'],
                     );
                     break;
                 }
             }
+            if (empty($links)) {
+                foreach ($categories as $category) {
+                    if (
+                        ! empty($category['name']) && ! empty($category['url']) &&
+                        stripos((string) $category['name'], (string) $brand_filters[0]) !== false
+                    ) {
+                        $links[] = array(
+                            'label' => sprintf(__('View All %s', 'carbon-repro-widget'), (string) $brand_filters[0]),
+                            'url' => (string) $category['url'],
+                        );
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (empty($links) && $category_match && ! empty($category_match['url']) && ! empty($category_match['name'])) {
+            $links[] = array(
+                'label' => sprintf(__('View All %s', 'carbon-repro-widget'), $category_match['name']),
+                'url' => $category_match['url'],
+            );
         }
 
         $cards = $this->dedupe_catalog_cards($cards);

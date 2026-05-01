@@ -925,8 +925,7 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
    19. Chat input area — Intercom-style composer
    -------------------------------------------------------------------------- */
 .watch-chat-form {
-  padding: 10px 12px 12px;
-  border-top: 1px solid #ebebeb;
+  padding: 0 12px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -941,6 +940,10 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   gap: 6px;
   flex-wrap: wrap;
   align-items: center;
+  padding: 10px 12px 0;
+  border-top: 1px solid #ebebeb;
+  background: #fff;
+  flex-shrink: 0;
 }
 
 /* Make toolbar buttons immune to theme button styles */
