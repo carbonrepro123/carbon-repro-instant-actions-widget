@@ -375,7 +375,9 @@
 
     isNearBottom = (container.scrollHeight - (container.scrollTop + container.clientHeight)) < 140;
     if (force || isNearBottom) {
+      container.style.scrollBehavior = 'auto';
       container.scrollTop = container.scrollHeight;
+      container.style.scrollBehavior = '';
     }
   }
 
@@ -387,7 +389,9 @@
     }
     var rowRect = row.getBoundingClientRect();
     var containerRect = container.getBoundingClientRect();
+    container.style.scrollBehavior = 'auto';
     container.scrollTop = container.scrollTop + (rowRect.top - containerRect.top);
+    container.style.scrollBehavior = '';
   }
 
   function renderPendingUploads() {
@@ -765,6 +769,9 @@
           messages: restoredMessages
         });
 
+        toggleIntake(false);
+        toggleHistoryPanel(false);
+
         if (elements.chatMessages) {
           elements.chatMessages.innerHTML = '';
           restoredMessages.forEach(function (message) {
@@ -774,12 +781,12 @@
               addChatMessage('user', message.content || '', '', message.meta || null);
             }
           });
+          scrollChatToBottom(true);
         }
 
         chatInitialized = true;
         chatMessageCount = restoredMessages.length;
         markConversationRead(chatConversationId);
-        toggleHistoryPanel(false);
         startChatPolling();
       });
       wrapper.appendChild(item);
