@@ -591,9 +591,9 @@ final class Carbon_Repro_Instant_Actions_Widget
                     'emptyHistory' => __('No previous chats saved on this browser yet.', 'carbon-repro-widget'),
                     'newReply' => __('New reply ready', 'carbon-repro-widget'),
                     'humanTakeover' => __('A team member has joined the chat.', 'carbon-repro-widget'),
-                    'intakeTitle' => __('Before we start', 'carbon-repro-widget'),
+                    'intakeTitle' => __('Start Your Chat', 'carbon-repro-widget'),
                     'intakeBody' => '',
-                    'intakeName' => __('Full name', 'carbon-repro-widget'),
+                    'intakeName' => __('Name', 'carbon-repro-widget'),
                     'intakeEmail' => __('Email', 'carbon-repro-widget'),
                     'intakePhone' => __('Phone', 'carbon-repro-widget'),
                     'intakeNeed' => __('What are you looking for?', 'carbon-repro-widget'),
@@ -741,9 +741,9 @@ final class Carbon_Repro_Instant_Actions_Widget
                     </div>
                     <div class="watch-chat-intake" id="watchChatIntake">
                         <div class="watch-chat-intake-card">
-                            <h3><?php esc_html_e('Before we start', 'carbon-repro-widget'); ?></h3>
+                            <h3><?php esc_html_e('Start Your Chat', 'carbon-repro-widget'); ?></h3>
                             <div class="watch-chat-intake-grid">
-                                <input type="text" id="watchChatLeadName" class="watch-chat-intake-input" placeholder="<?php esc_attr_e('Full name', 'carbon-repro-widget'); ?>" />
+                                <input type="text" id="watchChatLeadName" class="watch-chat-intake-input" placeholder="<?php esc_attr_e('Name', 'carbon-repro-widget'); ?>" />
                                 <input type="email" id="watchChatLeadEmail" class="watch-chat-intake-input" placeholder="<?php esc_attr_e('Email', 'carbon-repro-widget'); ?>" />
                                 <input type="text" id="watchChatLeadPhone" class="watch-chat-intake-input" placeholder="<?php esc_attr_e('Phone', 'carbon-repro-widget'); ?>" />
                                 <textarea id="watchChatLeadNeed" class="watch-chat-intake-input watch-chat-intake-textarea" rows="3" placeholder="<?php esc_attr_e('What are you looking for?', 'carbon-repro-widget'); ?>"></textarea>
@@ -5325,21 +5325,25 @@ final class Carbon_Repro_Instant_Actions_Widget
             'human_reply' => __('Human reply sent', 'carbon-repro-widget'),
             'limit_reached' => __('Chat message limit reached', 'carbon-repro-widget'),
         );
-        $contact = $this->get_bot_contact_details();
-        $body = array(
-            '[' . $this->get_setting('business_name', get_bloginfo('name')) . '] ' . (isset($label_map[$context]) ? $label_map[$context] : __('Widget chat update', 'carbon-repro-widget')),
-            __('Name:', 'carbon-repro-widget') . ' ' . (! empty($lead['name']) ? $lead['name'] : __('Unknown', 'carbon-repro-widget')),
-            __('Phone:', 'carbon-repro-widget') . ' ' . (! empty($lead['phone']) ? $lead['phone'] : __('Unknown', 'carbon-repro-widget')),
-            __('Need:', 'carbon-repro-widget') . ' ' . (! empty($lead['looking_for']) ? $lead['looking_for'] : __('Not provided', 'carbon-repro-widget')),
-        );
+        $contact     = $this->get_bot_contact_details();
+        $event_label = isset($label_map[$context]) ? $label_map[$context] : __('Widget chat update', 'carbon-repro-widget');
+        $biz_name    = $this->get_setting('business_name', get_bloginfo('name'));
+
+        $lines = array();
+        $lines[] = '[' . $biz_name . '] ' . $event_label;
+        $lines[] = '---';
+        $lines[] = 'Name:  ' . (! empty($lead['name']) ? $lead['name'] : 'Unknown');
+        $lines[] = 'Phone: ' . (! empty($lead['phone']) ? $lead['phone'] : 'Unknown');
+        $lines[] = 'Req:   ' . (! empty($lead['looking_for']) ? $lead['looking_for'] : 'Not provided');
         if (! empty($contact['phone'])) {
-            $body[] = __('Store Phone:', 'carbon-repro-widget') . ' ' . $contact['phone'];
+            $lines[] = '---';
+            $lines[] = 'Store: ' . $contact['phone'];
         }
         if ($conversation_id > 0) {
-            $body[] = admin_url('admin.php?page=carbon-repro-widget-conversations&conversation_id=' . $conversation_id);
+            $lines[] = 'View:  ' . admin_url('admin.php?page=carbon-repro-widget-conversations&conversation_id=' . $conversation_id);
         }
 
-        $result = $this->send_twilio_sms($to, implode("\n", $body));
+        $result = $this->send_twilio_sms($to, implode("\n", $lines));
         $this->append_notification_timeline(
             $conversation_id,
             'sms',
@@ -5365,24 +5369,32 @@ final class Carbon_Repro_Instant_Actions_Widget
             return;
         }
 
-        $contact = $this->get_bot_contact_details();
-        $body = array(
-            wp_strip_all_tags((string) $message, true),
-        );
-        if (! empty($contact['phone'])) {
-            $body[] = __('Phone:', 'carbon-repro-widget') . ' ' . $contact['phone'];
-        }
-        if (! empty($contact['email'])) {
-            $body[] = __('Email:', 'carbon-repro-widget') . ' ' . $contact['email'];
-        }
-        if (! empty($contact['location'])) {
-            $body[] = __('Location:', 'carbon-repro-widget') . ' ' . $contact['location'];
-        }
-        if (! empty($contact['location_url'])) {
-            $body[] = __('Map:', 'carbon-repro-widget') . ' ' . $contact['location_url'];
+        $contact      = $this->get_bot_contact_details();
+        $biz_name     = $this->get_setting('business_name', get_bloginfo('name'));
+        $clean_msg    = trim(wp_strip_all_tags((string) $message, true));
+
+        $lines = array();
+        $lines[] = $clean_msg;
+
+        $has_contact = ! empty($contact['phone']) || ! empty($contact['email']) || ! empty($contact['location']);
+        if ($has_contact) {
+            $lines[] = '';
+            $lines[] = 'Contact ' . $biz_name . ':';
+            if (! empty($contact['phone'])) {
+                $lines[] = 'Phone: ' . $contact['phone'];
+            }
+            if (! empty($contact['email'])) {
+                $lines[] = 'Email: ' . $contact['email'];
+            }
+            if (! empty($contact['location'])) {
+                $lines[] = 'Location: ' . $contact['location'];
+            }
+            if (! empty($contact['location_url'])) {
+                $lines[] = 'Map: ' . esc_url($contact['location_url']);
+            }
         }
 
-        $result = $this->send_twilio_sms($lead['phone'], implode("\n", $body));
+        $result = $this->send_twilio_sms($lead['phone'], implode("\n", $lines));
         $this->append_notification_timeline(
             $conversation_id,
             'sms',
