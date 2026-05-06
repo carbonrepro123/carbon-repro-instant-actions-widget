@@ -1483,8 +1483,6 @@
       elementsEarly.chatMessages.innerHTML = '';
     }
     toggleIntake(false);
-    chatState.isChatStarted = true;
-    applyChatUiState();
     if (lead.looking_for) {
       addChatMessage('user', lead.looking_for);
     }
@@ -1499,8 +1497,6 @@
       if (!data || !data.success || !data.data) {
         showToast((data && data.data && data.data.message) || strings.error || 'Unable to start chat.');
         toggleIntake(true);
-        chatState.isChatStarted = false;
-        applyChatUiState();
         return;
       }
 
@@ -1530,7 +1526,6 @@
     }).finally(function () {
       chatRequestInFlight = false;
       setChatLoading(false);
-      applyChatUiState();
     });
   }
 
