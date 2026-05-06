@@ -229,6 +229,7 @@ final class Carbon_Repro_Instant_Actions_Widget
 
         $fields = array(
             'white_label_plugin_name' => __('Admin Plugin Name', 'carbon-repro-widget'),
+            'assistant_mode' => __('Assistant Mode', 'carbon-repro-widget'),
             'business_name' => __('Business Name', 'carbon-repro-widget'),
             'business_industry' => __('Business Industry', 'carbon-repro-widget'),
             'business_location' => __('Business Location', 'carbon-repro-widget'),
@@ -295,7 +296,7 @@ final class Carbon_Repro_Instant_Actions_Widget
 
         foreach ($fields as $key => $label) {
             $section = 'criaw_chat_section';
-            if (in_array($key, array('white_label_plugin_name', 'business_name', 'business_industry', 'business_location', 'business_services', 'business_faqs', 'business_terminology_notes', 'qualification_questions', 'auto_crawl_enabled', 'crawl_focus_paths', 'crawled_knowledge', 'catalog_index_enabled', 'catalog_index_knowledge'), true)) {
+            if (in_array($key, array('white_label_plugin_name', 'assistant_mode', 'business_name', 'business_industry', 'business_location', 'business_services', 'business_faqs', 'business_terminology_notes', 'qualification_questions', 'auto_crawl_enabled', 'crawl_focus_paths', 'crawled_knowledge', 'catalog_index_enabled', 'catalog_index_knowledge'), true)) {
                 $section = 'criaw_business_section';
             } elseif (in_array($key, array('brand_logo_url', 'footer_logo_url', 'launcher_icon_url', 'theme_preset', 'primary_color', 'secondary_color', 'accent_color', 'panel_background_color', 'surface_color', 'text_color', 'button_text_color', 'launcher_text_color'), true)) {
                 $section = 'criaw_design_section';
@@ -320,6 +321,7 @@ final class Carbon_Repro_Instant_Actions_Widget
 
         return array(
             'white_label_plugin_name' => sanitize_text_field(isset($input['white_label_plugin_name']) ? $input['white_label_plugin_name'] : $defaults['white_label_plugin_name']),
+            'assistant_mode' => in_array(isset($input['assistant_mode']) ? $input['assistant_mode'] : $defaults['assistant_mode'], array('ecommerce', 'general'), true) ? (isset($input['assistant_mode']) ? $input['assistant_mode'] : $defaults['assistant_mode']) : 'ecommerce',
             'business_name' => sanitize_text_field(isset($input['business_name']) ? $input['business_name'] : $defaults['business_name']),
             'business_industry' => sanitize_text_field(isset($input['business_industry']) ? $input['business_industry'] : $defaults['business_industry']),
             'business_location' => sanitize_text_field(isset($input['business_location']) ? $input['business_location'] : $defaults['business_location']),
@@ -459,6 +461,20 @@ final class Carbon_Repro_Instant_Actions_Widget
             return;
         }
 
+        if ($key === 'assistant_mode') {
+            $modes = array(
+                'ecommerce' => __('Ecommerce (products + business info)', 'carbon-repro-widget'),
+                'general' => __('General Business (no product catalog suggestions)', 'carbon-repro-widget'),
+            );
+            echo '<select id="' . esc_attr($key) . '" name="' . esc_attr(self::OPTION_KEY) . '[' . esc_attr($key) . ']">';
+            foreach ($modes as $mode_key => $mode_label) {
+                echo '<option value="' . esc_attr($mode_key) . '" ' . selected($value, $mode_key, false) . '>' . esc_html($mode_label) . '</option>';
+            }
+            echo '</select>';
+            echo '<p class="description">' . esc_html__('Use General mode for non-WooCommerce websites. Ecommerce mode enables product and catalog intelligence.', 'carbon-repro-widget') . '</p>';
+            return;
+        }
+
         if ($key === 'theme_preset') {
             $presets = array(
                 'custom' => __('Custom Colors', 'carbon-repro-widget'),
@@ -495,7 +511,7 @@ final class Carbon_Repro_Instant_Actions_Widget
 
         if ($key === 'wpforms_id' || $key === 'chat_message_limit') {
             $type = 'number';
-            $attrs = ' min="1" step="1"';
+            $attrs = $key === 'chat_message_limit' ? ' min="0" step="1"' : ' min="1" step="1"';
         } elseif (in_array($key, array('notification_email', 'store_contact_email'), true)) {
             $type = 'email';
         } elseif (in_array($key, array('store_contact_location_url', 'powered_by_url'), true)) {
@@ -579,9 +595,9 @@ final class Carbon_Repro_Instant_Actions_Widget
                     'emptyHistory' => __('No previous chats saved on this browser yet.', 'carbon-repro-widget'),
                     'newReply' => __('New reply ready', 'carbon-repro-widget'),
                     'humanTakeover' => __('A team member has joined the chat.', 'carbon-repro-widget'),
-                    'intakeTitle' => __('Before we start', 'carbon-repro-widget'),
-                    'intakeBody' => __('Share your details so our team can follow up properly.', 'carbon-repro-widget'),
-                    'intakeName' => __('Full name', 'carbon-repro-widget'),
+                    'intakeTitle' => __('Start Your Chat', 'carbon-repro-widget'),
+                    'intakeBody' => '',
+                    'intakeName' => __('Name', 'carbon-repro-widget'),
                     'intakeEmail' => __('Email', 'carbon-repro-widget'),
                     'intakePhone' => __('Phone', 'carbon-repro-widget'),
                     'intakeNeed' => __('What are you looking for?', 'carbon-repro-widget'),
@@ -738,8 +754,9 @@ final class Carbon_Repro_Instant_Actions_Widget
                     </div>
                     <div class="watch-chat-intake" id="watchChatIntake">
                         <div class="watch-chat-intake-card">
+                            <h3><?php esc_html_e('Start Your Chat', 'carbon-repro-widget'); ?></h3>
                             <div class="watch-chat-intake-grid">
-                                <input type="text" id="watchChatLeadName" class="watch-chat-intake-input" placeholder="<?php esc_attr_e('Full name', 'carbon-repro-widget'); ?>" />
+                                <input type="text" id="watchChatLeadName" class="watch-chat-intake-input" placeholder="<?php esc_attr_e('Name', 'carbon-repro-widget'); ?>" />
                                 <input type="email" id="watchChatLeadEmail" class="watch-chat-intake-input" placeholder="<?php esc_attr_e('Email', 'carbon-repro-widget'); ?>" />
                                 <input type="text" id="watchChatLeadPhone" class="watch-chat-intake-input" placeholder="<?php esc_attr_e('Phone', 'carbon-repro-widget'); ?>" />
                                 <textarea id="watchChatLeadNeed" class="watch-chat-intake-input watch-chat-intake-textarea" rows="3" placeholder="<?php esc_attr_e('What are you looking for?', 'carbon-repro-widget'); ?>"></textarea>
@@ -769,11 +786,11 @@ final class Carbon_Repro_Instant_Actions_Widget
                         </div>
                         <div class="watch-chat-history-list" id="watchChatHistoryList"></div>
                     </div>
+                    <div class="watch-chat-toolbar" id="watchChatToolbar">
+                        <button type="button" class="watch-chat-tool-btn" id="watchChatPreviousBtn"><?php esc_html_e('Previous Chats', 'carbon-repro-widget'); ?></button>
+                        <button type="button" class="watch-chat-tool-btn" id="watchChatResetBtn"><?php esc_html_e('Reset Chat', 'carbon-repro-widget'); ?></button>
+                    </div>
                     <form class="watch-chat-form" id="watchChatForm">
-                        <div class="watch-chat-toolbar">
-                            <button type="button" class="watch-chat-tool-btn" id="watchChatPreviousBtn"><?php esc_html_e('Previous Chats', 'carbon-repro-widget'); ?></button>
-                            <button type="button" class="watch-chat-tool-btn" id="watchChatResetBtn"><?php esc_html_e('Reset Chat', 'carbon-repro-widget'); ?></button>
-                        </div>
                         <div class="watch-chat-composer">
                             <div class="watch-chat-attachments" id="watchChatAttachments" aria-live="polite"></div>
                             <div class="watch-chat-input-wrap">
@@ -1794,85 +1811,141 @@ final class Carbon_Repro_Instant_Actions_Widget
             );
         }
 
-        // Conversation mode: locked once set to agent_request
-        $conv_mode = (string) get_post_meta($conversation_id, '_criaw_conv_mode', true);
-        if ($conv_mode === '') {
-            $conv_mode = 'shopping';
-        }
-        if ($conv_mode !== 'agent_request' && $this->detect_agent_request($message)) {
-            $conv_mode = 'agent_request';
-            update_post_meta($conversation_id, '_criaw_conv_mode', 'agent_request');
-        }
+        $index = get_option(self::CATALOG_INDEX_OPTION_KEY, array());
+        $index_products = isset($index['products']) && is_array($index['products']) ? $index['products'] : array();
+        $index_categories = isset($index['categories']) && is_array($index['categories']) ? $index['categories'] : array();
+        $entities = $this->extract_message_entities($message, $index_categories, $index_products);
+        $initial_intent = $this->classify_user_intent($message, array());
+        $entities = $this->merge_entities_with_context($entities, $context, $initial_intent, $message);
+        $search_query = $this->build_constrained_search_query($message, $entities);
+        $catalog_suggestions = $this->get_catalog_suggestions_for_query($search_query);
+        $intent = $this->classify_user_intent($message, $catalog_suggestions);
+        $result = array('reply' => '', 'lead' => $lead);
+        $assistant_meta = array('catalog_cards' => array(), 'catalog_links' => array(), 'contact_actions' => array());
+        $conv_stage = isset($context['conversation_stage']) ? $context['conversation_stage'] : 'normal';
+        $conv_mode = isset($context['conversation_mode']) ? $context['conversation_mode'] : 'normal';
+        $last_brand_ctx = isset($context['last_brand']) ? (string) $context['last_brand'] : '';
+        $last_price_ctx = isset($context['last_price_range']) && is_array($context['last_price_range']) ? $context['last_price_range'] : array('min_price' => null, 'max_price' => null);
+        $ctx_brand = ! empty($entities['brand_explicit']) ? (string) $entities['brand'] : $last_brand_ctx;
+        $ctx_price = (! empty($entities['price_explicit']) || ! empty($entities['has_price_filter'])) ? array('min_price' => $entities['min_price'], 'max_price' => $entities['max_price']) : $last_price_ctx;
 
-        // Conversation filters: persist brand/price across messages
-        $conv_filters = get_post_meta($conversation_id, '_criaw_conv_filters', true);
-        $conv_filters = is_array($conv_filters) ? $conv_filters : array();
-        $new_filters = $this->extract_message_filters($message);
-        if (! empty($new_filters)) {
-            $conv_filters = array_merge($conv_filters, $new_filters);
-            update_post_meta($conversation_id, '_criaw_conv_filters', $conv_filters);
-        }
-
-        $intent = '';
-        if ($conv_mode === 'agent_request') {
-            // Agent handoff: skip all catalog logic, let OpenAI collect contact details
-            $result = $this->request_openai_reply($transcript, $lead, $conv_mode, $conv_filters);
-            if (is_wp_error($result)) {
-                $result = array(
-                    'reply' => __('Can you tell me your preferred brand or price range?', 'carbon-repro-widget'),
-                    'lead' => $lead,
-                );
-            }
-            if (empty($result['reply'])) {
-                $result['reply'] = __('Can you tell me your preferred brand or price range?', 'carbon-repro-widget');
-            }
-            $assistant_meta = array(
-                'catalog_cards'   => array(),
-                'catalog_links'   => array(),
-                'contact_actions' => array(),
+        // --- Stage-locked flows (always single-intent regardless of message content) ---
+        if ($conv_stage === 'handoff_confirmed') {
+            $contact = $this->get_bot_contact_details();
+            $result['reply'] = sprintf(
+                __("Our team has your details and will be in touch shortly.\n\nYou can also reach us directly:\nPhone: %s\nEmail: %s", 'carbon-repro-widget'),
+                ! empty($contact['phone']) ? $contact['phone'] : '713-705-6097',
+                ! empty($contact['email']) ? $contact['email'] : 'info@fsfinewatches.com'
             );
-        } else {
-            $catalog_suggestions = $this->get_catalog_suggestions_for_query($message, $conv_filters);
-            $intent = $this->classify_user_intent($message, $catalog_suggestions);
-            $result = array('reply' => '', 'lead' => $lead);
-            $assistant_meta = array('catalog_cards' => array(), 'catalog_links' => array(), 'contact_actions' => array());
+            $assistant_meta = $this->build_assistant_meta(array('cards' => array(), 'links' => array()), 'contact', true);
+            $intent = 'HUMAN_AGENT_REQUEST';
+        } elseif ($conv_stage === 'awaiting_contact_details' && $intent === 'PROVIDE_CONTACT_INFO') {
+            $parsed = $this->extract_contact_details_from_text($message);
+            $lead['name'] = $lead['name'] !== '' ? $lead['name'] : (isset($parsed['name']) ? $parsed['name'] : '');
+            $lead['email'] = $lead['email'] !== '' ? $lead['email'] : (isset($parsed['email']) ? $parsed['email'] : '');
+            $lead['phone'] = $lead['phone'] !== '' ? $lead['phone'] : (isset($parsed['phone']) ? $parsed['phone'] : '');
+            $result['lead'] = $lead;
 
-            if ($intent === 'GREETING') {
-                $result['reply'] = __('Hi! How can I help you today?', 'carbon-repro-widget');
-            } elseif ($intent === 'GRATITUDE') {
-                $result['reply'] = __('You are welcome! Let me know if you need anything else.', 'carbon-repro-widget');
-            } elseif ($intent === 'BUSINESS_INFO') {
-                $result['reply'] = $this->get_business_info_reply();
-                $assistant_meta = $this->build_assistant_meta(array('cards' => array(), 'links' => array()), $message, true);
-            } elseif ($intent === 'PRODUCT_BROWSE') {
-                $catalog_suggestions = $this->get_brand_browse_suggestions();
-                $result['reply'] = __('Sure! Here are our brands and collections. Tell me the brand or model you want and I will narrow it down.', 'carbon-repro-widget');
-                $assistant_meta = $this->build_assistant_meta($catalog_suggestions, $message, false);
-            } elseif ($intent === 'PRODUCT_SEARCH' || $intent === 'PRODUCT_DETAILS') {
-                $refined_cards = $this->refine_cards_from_context($message, isset($context['last_catalog_cards']) ? $context['last_catalog_cards'] : array());
-                if (! empty($refined_cards)) {
-                    $catalog_suggestions['cards'] = $refined_cards;
-                    $catalog_suggestions['links'] = array();
-                    $result['reply'] = __('Sure — here are options based on your previous results.', 'carbon-repro-widget');
-                } else {
-                    $result['reply'] = $this->format_catalog_assisted_reply($message, '', $catalog_suggestions);
-                }
-                $assistant_meta = $this->build_assistant_meta($catalog_suggestions, $message, false);
+            if ($lead['name'] !== '' && $lead['email'] !== '' && $lead['phone'] !== '') {
+                $contact = $this->get_bot_contact_details();
+                $result['reply'] = sprintf(
+                    __("Thanks! Our team will contact you shortly.\nPhone: %s\nEmail: %s", 'carbon-repro-widget'),
+                    ! empty($contact['phone']) ? $contact['phone'] : '713-705-6097',
+                    ! empty($contact['email']) ? $contact['email'] : 'info@fsfinewatches.com'
+                );
+                $assistant_meta = $this->build_assistant_meta(array('cards' => array(), 'links' => array()), 'contact', true);
+                $this->set_chat_context($conversation_id, 'HUMAN_AGENT_REQUEST', $message, array(), array('conversation_stage' => 'handoff_confirmed', 'last_brand' => $ctx_brand, 'last_price_range' => $ctx_price));
             } else {
-                $result = $this->request_openai_reply($transcript, $lead, $conv_mode, $conv_filters);
-                if (is_wp_error($result)) {
-                    $result = array(
-                        'reply' => __('Can you tell me your preferred brand or price range?', 'carbon-repro-widget'),
-                        'lead' => $lead,
+                $result['reply'] = __('I can connect you with a real agent. Please share your name, email, and phone.', 'carbon-repro-widget');
+                $this->set_chat_context($conversation_id, 'HUMAN_AGENT_REQUEST', $message, array(), array('conversation_stage' => 'awaiting_contact_details', 'last_brand' => $ctx_brand, 'last_price_range' => $ctx_price));
+            }
+            $intent = 'PROVIDE_CONTACT_INFO';
+        } elseif ($conv_mode === 'trade' && in_array($conv_stage, array('trade_collecting', 'trade_complete'), true)) {
+            // Continue trade flow unless user explicitly exits
+            $result['reply'] = $this->handle_trade_sell_flow($message, $context, $lead, $conversation_id, $assistant_meta);
+            $intent = 'TRADE_SELL_REQUEST';
+        } else {
+            // --- Free routing: detect all intents in the message ---
+            $intents = $this->detect_intents_multi($message, $catalog_suggestions);
+            $primary_intent = $intents[0];
+            $intent = $primary_intent;
+
+            if ($primary_intent === 'HUMAN_AGENT_REQUEST') {
+                $has_lead = ! empty($lead['name']) && (! empty($lead['email']) || ! empty($lead['phone']));
+                if ($has_lead) {
+                    $contact = $this->get_bot_contact_details();
+                    $result['reply'] = sprintf(
+                        __("I've notified our team — a real agent will be with you shortly!\n\nYou can also reach us directly:\nPhone: %s\nEmail: %s", 'carbon-repro-widget'),
+                        ! empty($contact['phone']) ? $contact['phone'] : '713-705-6097',
+                        ! empty($contact['email']) ? $contact['email'] : 'info@fsfinewatches.com'
                     );
+                    $assistant_meta = $this->build_assistant_meta(array('cards' => array(), 'links' => array()), 'contact', true);
+                    $this->set_chat_context($conversation_id, 'HUMAN_AGENT_REQUEST', $message, array(), array('conversation_stage' => 'handoff_confirmed', 'last_brand' => $ctx_brand, 'last_price_range' => $ctx_price));
+                } else {
+                    $result['reply'] = __('I can connect you with a real agent. Please share your name, email, and phone so we can reach you.', 'carbon-repro-widget');
+                    $this->set_chat_context($conversation_id, 'HUMAN_AGENT_REQUEST', $message, array(), array('conversation_stage' => 'awaiting_contact_details', 'last_brand' => $ctx_brand, 'last_price_range' => $ctx_price));
                 }
-                if (empty($result['reply'])) {
-                    $result['reply'] = __('Can you tell me your preferred brand or price range?', 'carbon-repro-widget');
+            } elseif ($primary_intent === 'FRUSTRATION') {
+                $result['reply'] = __("I'm sorry about that — let me do better. Please tell me your preferred brand or budget and I'll show you accurate results.", 'carbon-repro-widget');
+                $this->set_chat_context($conversation_id, 'FRUSTRATION', $message, array(), array('conversation_stage' => 'normal', 'conversation_mode' => 'normal', 'last_brand' => $ctx_brand, 'last_price_range' => $ctx_price));
+            } elseif ($primary_intent === 'TRADE_SELL_REQUEST') {
+                $result['reply'] = $this->handle_trade_sell_flow($message, $context, $lead, $conversation_id, $assistant_meta);
+            } elseif ($primary_intent === 'GREETING') {
+                $result['reply'] = __('Hi! How can I help you today?', 'carbon-repro-widget');
+            } elseif ($primary_intent === 'GRATITUDE') {
+                $result['reply'] = __("You're welcome! Let me know if there's anything else I can help with.", 'carbon-repro-widget');
+            } elseif ($primary_intent === 'PROVIDE_CONTACT_INFO') {
+                $result['reply'] = __('Thanks for that! Is there anything else I can help you with?', 'carbon-repro-widget');
+            } else {
+                // Multi-intent composer — BUSINESS_INFO, BRAND_REQUEST, PRODUCT_SEARCH, etc.
+                $reply_parts = array();
+                $combined_meta = array('catalog_cards' => array(), 'catalog_links' => array(), 'contact_actions' => array());
+
+                if (in_array('BUSINESS_INFO', $intents, true)) {
+                    $reply_parts[] = $this->get_business_info_reply();
+                    $biz_meta = $this->build_assistant_meta(array('cards' => array(), 'links' => array()), $message, true);
+                    $combined_meta['contact_actions'] = isset($biz_meta['contact_actions']) ? $biz_meta['contact_actions'] : array();
                 }
-                $result['reply'] = $this->format_catalog_assisted_reply($message, $result['reply'], $catalog_suggestions);
-                $assistant_meta = $this->build_assistant_meta($catalog_suggestions, $message, isset($catalog_suggestions['intent_type']) && $catalog_suggestions['intent_type'] === 'service_info');
-                if (! empty($assistant_meta['contact_actions'])) {
-                    $result['reply'] = $this->clean_reply_contact_block($result['reply']);
+
+                if (in_array('BRAND_REQUEST', $intents, true)) {
+                    if (! $this->is_ecommerce_mode()) {
+                        $reply_parts[] = __('This assistant is in general business mode. Tell me what service or information you need and I will help.', 'carbon-repro-widget');
+                    } else {
+                        $brand_suggestions = $this->get_brand_browse_suggestions();
+                        $reply_parts[] = __('Here are our brands and collections. Tell me the brand or model you want and I will narrow it down.', 'carbon-repro-widget');
+                        $brand_meta = $this->build_assistant_meta($brand_suggestions, $message, false);
+                        $combined_meta['catalog_cards'] = isset($brand_meta['catalog_cards']) ? $brand_meta['catalog_cards'] : array();
+                        $combined_meta['catalog_links'] = isset($brand_meta['catalog_links']) ? $brand_meta['catalog_links'] : array();
+                    }
+                } elseif (in_array('PRODUCT_SEARCH', $intents, true) || in_array('PRODUCT_FILTER', $intents, true) || in_array('PRODUCT_DETAILS', $intents, true)) {
+                    if (! $this->is_ecommerce_mode()) {
+                        $reply_parts[] = __('I can help with business information and support. Can you tell me what service or help you need?', 'carbon-repro-widget');
+                    } else {
+                        $refined_cards = $this->refine_cards_from_context($message, isset($context['last_catalog_cards']) ? $context['last_catalog_cards'] : array());
+                        if (! empty($refined_cards)) {
+                            $catalog_suggestions['cards'] = $refined_cards;
+                            $catalog_suggestions['links'] = array();
+                            $reply_parts[] = __('Here are options based on your previous results.', 'carbon-repro-widget');
+                        } else {
+                            $reply_parts[] = $this->format_catalog_assisted_reply($search_query, '', $catalog_suggestions);
+                        }
+                        $prod_meta = $this->build_assistant_meta($catalog_suggestions, $message, false);
+                        $combined_meta['catalog_cards'] = isset($prod_meta['catalog_cards']) ? $prod_meta['catalog_cards'] : array();
+                        $combined_meta['catalog_links'] = isset($prod_meta['catalog_links']) ? $prod_meta['catalog_links'] : array();
+                    }
+                }
+
+                if (! empty($reply_parts)) {
+                    $result['reply'] = implode("\n\n", $reply_parts);
+                    $assistant_meta = $combined_meta;
+                    $this->set_chat_context($conversation_id, $primary_intent, $message, isset($assistant_meta['catalog_cards']) ? $assistant_meta['catalog_cards'] : array(), array('conversation_stage' => 'normal', 'conversation_mode' => 'normal', 'last_brand' => $ctx_brand, 'last_price_range' => $ctx_price));
+                } else {
+                    // UNKNOWN — fall back to OpenAI
+                    $result = $this->request_openai_reply($transcript, $lead);
+                    if (is_wp_error($result) || empty($result['reply'])) {
+                        $result = array('reply' => __("I'm not sure I understood that. Could you tell me the brand or model you're looking for?", 'carbon-repro-widget'), 'lead' => $lead);
+                    }
+                    $this->set_chat_context($conversation_id, 'UNKNOWN', $message, array(), array('conversation_stage' => 'normal', 'conversation_mode' => 'normal', 'last_brand' => $ctx_brand, 'last_price_range' => $ctx_price));
                 }
             }
         }
@@ -1889,7 +1962,6 @@ final class Carbon_Repro_Instant_Actions_Widget
         update_post_meta($conversation_id, '_criaw_lead', $lead);
         update_post_meta($conversation_id, '_criaw_meta', $meta_store);
         update_post_meta($conversation_id, '_criaw_last_message_at', current_time('mysql'));
-        $this->set_chat_context($conversation_id, $intent, $message, isset($assistant_meta['catalog_cards']) ? $assistant_meta['catalog_cards'] : array());
         $this->refresh_conversation_title($conversation_id, $lead);
 
         if ($is_new_conversation) {
@@ -2198,7 +2270,6 @@ final class Carbon_Repro_Instant_Actions_Widget
                 'name' => $product->get_name(),
                 'sku' => $product->get_sku(),
                 'price' => wp_strip_all_tags($product->get_price_html()),
-                'price_raw' => (float) $product->get_price(),
                 'url' => get_permalink($post->ID),
                 'categories' => wp_get_post_terms($post->ID, 'product_cat', array('fields' => 'names')),
                 'short_description' => wp_trim_words(wp_strip_all_tags($product->get_short_description(), true), 30, '...'),
@@ -2819,7 +2890,6 @@ final class Carbon_Repro_Instant_Actions_Widget
                 'name' => $product->get_name(),
                 'sku' => $product->get_sku(),
                 'price' => wp_strip_all_tags($product->get_price_html()),
-                'price_raw' => (float) $product->get_price(),
                 'url' => get_permalink($post->ID),
                 'categories' => wp_get_post_terms($post->ID, 'product_cat', array('fields' => 'names')),
                 'short_description' => wp_trim_words(wp_strip_all_tags($product->get_short_description(), true), 30, '...'),
@@ -3057,6 +3127,11 @@ final class Carbon_Repro_Instant_Actions_Widget
         return class_exists('WooCommerce') || function_exists('wc_get_product');
     }
 
+    private function is_ecommerce_mode()
+    {
+        return $this->get_setting('assistant_mode', 'ecommerce') === 'ecommerce' && $this->is_woocommerce_active();
+    }
+
     private function extract_priority_internal_links($url)
     {
         $html = $this->fetch_local_url($url);
@@ -3187,7 +3262,7 @@ final class Carbon_Repro_Instant_Actions_Widget
         return '';
     }
 
-    private function request_openai_reply($transcript, $lead, $conv_mode = 'shopping', $conv_filters = array())
+    private function request_openai_reply($transcript, $lead)
     {
         $api_key = $this->get_setting('openai_api_key', '');
         if ($api_key === '') {
@@ -3197,7 +3272,7 @@ final class Carbon_Repro_Instant_Actions_Widget
         $input = array(
             array(
                 'role' => 'developer',
-                'content' => $this->build_chatbot_prompt($lead, $this->get_latest_user_message($transcript), $conv_mode, $conv_filters),
+                'content' => $this->build_chatbot_prompt($lead, $this->get_latest_user_message($transcript)),
             ),
         );
 
@@ -3285,7 +3360,7 @@ final class Carbon_Repro_Instant_Actions_Widget
         );
     }
 
-    private function build_chatbot_prompt($lead, $latest_message = '', $conv_mode = 'shopping', $conv_filters = array())
+    private function build_chatbot_prompt($lead, $latest_message = '')
     {
         $services = trim($this->get_setting('business_services', ''));
         $faqs = trim($this->get_setting('business_faqs', ''));
@@ -3294,97 +3369,48 @@ final class Carbon_Repro_Instant_Actions_Widget
         $crawled_knowledge = trim($this->get_setting('crawled_knowledge', ''));
         $catalog_knowledge = trim($this->get_setting('catalog_index_knowledge', ''));
         $custom = trim($this->get_setting('chatbot_prompt', ''));
-        $widget_mode = $this->get_setting('widget_mode', 'ecommerce');
-        $is_ecommerce = ($widget_mode === 'ecommerce') && ($conv_mode !== 'agent_request');
-        $catalog_context = $is_ecommerce ? $this->get_catalog_context_for_query($latest_message) : '';
-        $catalog_suggestions = $is_ecommerce ? $this->get_catalog_suggestions_for_query($latest_message, $conv_filters) : array();
-        $intent_type = isset($catalog_suggestions['intent_type']) ? $catalog_suggestions['intent_type'] : 'unknown';
+        $catalog_context = $this->get_catalog_context_for_query($latest_message);
+        $catalog_suggestions = $this->get_catalog_suggestions_for_query($latest_message);
         $bot_contact = $this->get_bot_contact_details();
 
-        $parts = array();
-        $parts[] = 'You are the lead intake assistant for this business website.';
-        $parts[] = 'Business name: ' . $this->get_setting('business_name', 'This business');
-        $parts[] = 'Industry: ' . $this->get_setting('business_industry', 'General service business');
-        $parts[] = 'Location: ' . $this->get_setting('business_location', '');
-        $parts[] = 'Preferred contact details the chatbot should use when sharing store information: phone=' . $bot_contact['phone'] . '; email=' . $bot_contact['email'] . '; location=' . $bot_contact['location'] . '; map=' . (isset($bot_contact['location_url']) ? $bot_contact['location_url'] : '');
-        $parts[] = 'Services: ' . ($services !== '' ? $services : 'Not provided');
-        $parts[] = 'FAQs / facts: ' . ($faqs !== '' ? $faqs : 'Not provided');
-        $parts[] = 'Crawled website knowledge summary: ' . ($crawled_knowledge !== '' ? $crawled_knowledge : 'Not provided');
-
-        if ($is_ecommerce) {
-            $parts[] = 'Indexed ecommerce catalog summary: ' . ($catalog_knowledge !== '' ? $catalog_knowledge : 'Not provided');
-            $parts[] = 'Current visitor question intent type: ' . $intent_type;
-            $parts[] = 'Live catalog matches for the current visitor question: ' . ($catalog_context !== '' ? $catalog_context : 'No direct product or category matches found for this question.');
-        }
-
-        $parts[] = 'Critical terminology / disambiguation notes: ' . ($terminology !== '' ? $terminology : 'Not provided');
-        $parts[] = 'Required qualification questions, asked in order when still relevant: ' . ($qualification !== '' ? $qualification : 'Not provided');
-        $parts[] = 'Your goal is to help visitors with questions and collect lead details.';
-        $parts[] = 'Always try to collect, if missing: full name, email, phone number, and what service or outcome they are looking for.';
-        $parts[] = 'If the visitor asks about services, answer based only on the provided services, FAQs, and crawled knowledge.';
-
-        if ($conv_mode === 'agent_request') {
-            $parts[] = 'CRITICAL MODE: The visitor has requested to speak with a human agent. You are now in AGENT HANDOFF MODE.';
-            $parts[] = 'RULES FOR AGENT HANDOFF MODE:';
-            $parts[] = '1. DO NOT show any products, categories, or catalog links. NEVER.';
-            $parts[] = '2. Collect the visitor\'s contact details step by step: first name, then email, then phone number.';
-            $parts[] = '3. Only ask for one piece of information per message.';
-            $parts[] = '4. Once you have name, email, AND phone, reply exactly: "Thank you, [name]. Our team will contact you shortly via email or phone."';
-            $parts[] = '5. If the visitor provides all three in one message, confirm them and give the final thank-you message.';
-            $parts[] = '6. Do NOT ask about products, needs, or anything else. ONLY collect name, email, phone.';
-            $parts[] = '7. Be warm and human. Example: "Sure! I\'ll connect you with our team. May I have your name?"';
-        } elseif (! empty($conv_filters)) {
-            $filter_desc = array();
-            if (! empty($conv_filters['max_price'])) {
-                $filter_desc[] = 'max price $' . number_format((float) $conv_filters['max_price'], 0, '.', ',');
-            }
-            if (! empty($conv_filters['min_price'])) {
-                $filter_desc[] = 'min price $' . number_format((float) $conv_filters['min_price'], 0, '.', ',');
-            }
-            if (! empty($filter_desc)) {
-                $parts[] = 'ACTIVE SEARCH FILTERS (from earlier in this conversation): ' . implode(', ', $filter_desc) . '. Apply these filters to ALL product responses even if the visitor does not repeat them.';
-                $parts[] = 'If no products match the active filters, respond: "Currently, we don\'t have [brand/item] in that price range. Would you like to see the closest options slightly outside your budget, or adjust your price range?"';
-                $parts[] = 'NEVER show products that violate the active price filters.';
-            }
-        }
-
-        if ($intent_type === 'company_info') {
-            $parts[] = 'IMPORTANT: The visitor is asking about the company, its trustworthiness, authenticity, history, or legitimacy. Answer from the FAQs and crawled knowledge. Do NOT respond with product listings or category links. Give a reassuring, informative answer about the business.';
-        } elseif ($intent_type === 'general_question') {
-            $parts[] = 'IMPORTANT: The visitor is asking a general overview question (e.g., how many products, which brands, full catalog). Answer from the catalog summary and business knowledge. Do NOT show product cards or category links. Give a conversational summary answer.';
-        } elseif ($is_ecommerce) {
-            $parts[] = 'If the current question intent type is service_info, do not answer with product listings. Answer from services, FAQs, and crawled website knowledge instead.';
-            $parts[] = 'If a product or category match exists, include the exact product or category link in the reply.';
-            $parts[] = 'IMPORTANT — brand vs sub-category distinction: If the visitor names a BRAND (e.g., "Rolex", "Omega"), give them the BRAND category link (the top-level page for that brand), NOT a sub-category link like Datejust or Submariner. Only give a sub-category link if the visitor specifically names that sub-category or model line.';
-            $parts[] = 'If multiple matching products exist within a family or collection, mention the collection category link rather than listing individual products.';
-            $parts[] = 'If the visitor mentions a SKU, reference number, model, product name, or collection name, prefer the live catalog matches over generic crawl information.';
-            $parts[] = 'When multiple structured matches exist, keep the reply short — the interface shows product cards and links automatically.';
-            $parts[] = 'When the query is generic (only a brand or broad collection), confirm availability briefly and ask the visitor to narrow down the model.';
-        }
-
-        if ($is_ecommerce) {
-            $parts[] = 'Widget mode: eCommerce — product cards and category links are supported.';
-        } else {
-            $parts[] = 'Widget mode: General (non-eCommerce) — do NOT mention products, categories, prices, or catalog links. Focus entirely on services, FAQs, and collecting lead details.';
-        }
-
-        $parts[] = 'If information is missing, say the team will confirm details.';
-        $parts[] = 'CONVERSATION MEMORY: The full transcript of this conversation is included. You MUST remember and apply all context from previous messages — brand preferences, price limits, what the visitor asked before. Never forget earlier constraints.';
-        $parts[] = 'FRUSTRATION HANDLING: If the visitor expresses frustration, confusion, or uses phrases like "are you crazy", "that is wrong", "you are not listening", "useless", respond warmly: "I\'m sorry for the confusion. Let me fix that for you." Then address their actual request correctly.';
-        $parts[] = 'Do not make naive assumptions about ambiguous words. Use the terminology notes and business context before answering.';
-        $parts[] = 'Prioritize the qualification questions when the visitor has not yet supplied that information.';
-        $parts[] = 'Ask for only one or two missing lead fields at a time.';
-        $parts[] = 'Be business-specific. Speak naturally in the context of the industry provided.';
-        $parts[] = 'Return JSON only with keys: reply and lead.';
-        $parts[] = 'Lead object keys must be: name, email, phone, looking_for.';
-        $parts[] = 'Use empty strings for unknown values.';
-        $parts[] = 'Current collected lead data: name=' . (isset($lead['name']) ? $lead['name'] : '') . '; email=' . (isset($lead['email']) ? $lead['email'] : '') . '; phone=' . (isset($lead['phone']) ? $lead['phone'] : '') . '; looking_for=' . (isset($lead['looking_for']) ? $lead['looking_for'] : '');
-
-        if ($custom !== '') {
-            $parts[] = 'Additional instructions: ' . $custom;
-        }
-
-        return implode("\n\n", array_filter($parts, function ($p) { return $p !== ''; }));
+        return implode(
+            "\n\n",
+            array(
+                'You are the lead intake assistant for this business website.',
+                'Business name: ' . $this->get_setting('business_name', 'This business'),
+                'Industry: ' . $this->get_setting('business_industry', 'General service business'),
+                'Location: ' . $this->get_setting('business_location', ''),
+                'Preferred contact details the chatbot should use when sharing store information: phone=' . $bot_contact['phone'] . '; email=' . $bot_contact['email'] . '; location=' . $bot_contact['location'] . '; map=' . (isset($bot_contact['location_url']) ? $bot_contact['location_url'] : ''),
+                'Services: ' . ($services !== '' ? $services : 'Not provided'),
+                'FAQs / facts: ' . ($faqs !== '' ? $faqs : 'Not provided'),
+                'Crawled website knowledge summary: ' . ($crawled_knowledge !== '' ? $crawled_knowledge : 'Not provided'),
+                'Indexed ecommerce catalog summary: ' . ($catalog_knowledge !== '' ? $catalog_knowledge : 'Not provided'),
+                'Current visitor question intent type: ' . (isset($catalog_suggestions['intent_type']) ? $catalog_suggestions['intent_type'] : 'unknown'),
+                'Live catalog matches for the current visitor question: ' . ($catalog_context !== '' ? $catalog_context : 'No direct product or category matches found for this question.'),
+                'Critical terminology / disambiguation notes: ' . ($terminology !== '' ? $terminology : 'Not provided'),
+                'Required qualification questions, asked in order when still relevant: ' . ($qualification !== '' ? $qualification : 'Not provided'),
+                'Your goal is to help visitors with basic questions and collect lead details.',
+                'Always try to collect, if missing: full name, email, phone number, and what service or outcome they are looking for.',
+                'If the visitor asks about services, answer based only on the provided services and FAQs.',
+                'If the current question intent type is service_info, support, repair, feature, warranty, delivery, or policy related, do not answer with product listings. Answer from services, FAQs, and crawled website knowledge instead.',
+                'If the website is an ecommerce store and a product or category match exists, include the exact product or category link in the reply.',
+                'If multiple matching products exist within a family or collection, mention the closest matching category or collection link instead of giving a vague answer.',
+                'If the visitor mentions a SKU, reference number, model, product name, or collection name, prefer the live catalog matches over generic website crawl information.',
+                'Use matched product attributes when answering product-specific questions.',
+                'When multiple structured matches exist, do not write a long numbered list of products in the message. Keep the reply short and let the interface show the product cards and links.',
+                'When the query is generic, such as only a brand or broad collection, confirm availability briefly and ask the visitor to narrow down the model.',
+                'If information is missing, say the team will confirm details.',
+                'Do not make naive assumptions about ambiguous words. Use the terminology notes and business context before answering.',
+                'Prioritize the qualification questions when the visitor has not yet supplied that information.',
+                'Ask for only one or two missing lead fields at a time.',
+                'Be business-specific. If the business is dental, speak naturally about dental services. If it is legal, speak naturally about legal services, and so on.',
+                'Return JSON only with keys: reply and lead.',
+                'Lead object keys must be: name, email, phone, looking_for.',
+                'Use empty strings for unknown values.',
+                'Current collected lead data: name=' . (isset($lead['name']) ? $lead['name'] : '') . '; email=' . (isset($lead['email']) ? $lead['email'] : '') . '; phone=' . (isset($lead['phone']) ? $lead['phone'] : '') . '; looking_for=' . (isset($lead['looking_for']) ? $lead['looking_for'] : ''),
+                $custom !== '' ? 'Additional instructions: ' . $custom : '',
+            )
+        );
     }
 
     private function get_bot_contact_details()
@@ -3395,38 +3421,6 @@ final class Carbon_Repro_Instant_Actions_Widget
             'location' => $this->get_setting('store_contact_location', $this->get_setting('business_location', '')),
             'location_url' => $this->get_setting('store_contact_location_url', ''),
         );
-    }
-
-    private function detect_agent_request($message)
-    {
-        $msg = strtolower(trim((string) $message));
-        return (bool) preg_match(
-            '/\b(talk to (a |an )?(human|agent|person|representative|rep|staff|manager|team)|speak (to|with) (a |an )?(human|agent|person|representative|rep|staff|manager)|connect me (to|with) (a |an )?(human|agent|person|representative)|i want (a |an )?(human|agent|real person|actual person|live person)|get me (a |an )?(human|agent|real person)|human agent|live agent|real person|actual person|live support|live chat|live help|talk to someone)\b/',
-            $msg
-        );
-    }
-
-    private function extract_message_filters($message)
-    {
-        $filters = array();
-        $msg = strtolower(trim((string) $message));
-
-        if (preg_match('/\bbetween\s*\$?\s*([0-9,]+(?:\.[0-9]{1,2})?)\s*(?:and|to|-)\s*\$?\s*([0-9,]+(?:\.[0-9]{1,2})?)\b/i', $msg, $m)) {
-            $filters['min_price'] = (float) str_replace(',', '', $m[1]);
-            $filters['max_price'] = (float) str_replace(',', '', $m[2]);
-        } elseif (preg_match('/\b(?:under|below|less than|max(?:imum)?|no more than|up to|cheaper than|within)\s*\$?\s*([0-9,]+(?:\.[0-9]{1,2})?)\b/i', $msg, $m)) {
-            $filters['max_price'] = (float) str_replace(',', '', $m[1]);
-        } elseif (preg_match('/\b(?:over|above|more than|min(?:imum)?|at least|starting (?:from|at)|from)\s*\$?\s*([0-9,]+(?:\.[0-9]{1,2})?)\b/i', $msg, $m)) {
-            $filters['min_price'] = (float) str_replace(',', '', $m[1]);
-        }
-
-        return $filters;
-    }
-
-    private function parse_price_string($price_string)
-    {
-        $cleaned = preg_replace('/[^0-9.]/', '', (string) $price_string);
-        return $cleaned !== '' ? (float) $cleaned : 0.0;
     }
 
     private function get_chat_message_limit()
@@ -3561,27 +3555,54 @@ final class Carbon_Repro_Instant_Actions_Widget
             return 'UNKNOWN';
         }
 
-        if (preg_match('/^(hi|hello|hey|salam|assalam o alaikum|good morning|good afternoon|good evening)\b[!. ]*$/i', $text)) {
+        // Pure greeting (standalone, not mixed with a question)
+        if (preg_match('/^(hi|hello|hey|salam|assalam o alaikum|good morning|good afternoon|good evening)\b[!., ]*$/i', $text)) {
             return 'GREETING';
         }
 
-        if (preg_match('/\b(thanks|thank you|thx|ok thanks|great thanks|appreciate it)\b/i', $text)) {
+        if (preg_match('/\b(thanks|thank you|thx|ok thanks|great thanks|appreciate it)\b/i', $text) && strlen($text) < 80) {
             return 'GRATITUDE';
         }
 
-        if (preg_match('/\b(where are you|location|address|directions|contact|phone|email|hours|timing|open|close)\b/i', $text)) {
+        // Human agent — check before trade so "talk to a person about selling" → human
+        if (preg_match('/\b(human|real agent|live agent|representative|support team|talk to (a )?person|connect me|real person|speak to (someone|a human|an agent))\b/i', $text)) {
+            return 'HUMAN_AGENT_REQUEST';
+        }
+
+        // Trade / sell — must come before product search
+        if (preg_match('/\b(i want to sell|i want to trade|looking to sell|looking to trade|sell my|trade my|trade.?in|part.?exchange|want to sell|want to trade|cash for (my|a|an)|i have a .* (to sell|for sale)|selling my|trading my)\b/i', $text)) {
+            return 'TRADE_SELL_REQUEST';
+        }
+
+        // Frustration / confusion
+        if (preg_match('/\b(not understanding|you (are|don\'t|do not|aren\'t) (understanding|getting it|listening)|not getting it|you don\'t get it|not helpful|that\'?s wrong|wrong answer|irrelevant result|not what i (asked|wanted|said)|stop showing|you are (dumb|stupid|useless)|are you crazy|this is (wrong|useless|irrelevant)|frustrated|i said .* not)\b/i', $text)) {
+            return 'FRUSTRATION';
+        }
+
+        if (preg_match('/\b([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})\b/i', $text) || preg_match('/\+?\d[\d\-\s\(\)]{7,}\d/', $text)) {
+            return 'PROVIDE_CONTACT_INFO';
+        }
+
+        // Business info — also matches outlet / physical store queries
+        if (preg_match('/\b(where are you|where is (your|the)|physical.?(store|shop|outlet)|have.*(outlet|store|shop)|location|address|directions?|contact|phone|email|hours?|timing|open|clos(e|ed|ing)|about (your|the) (company|store|shop|business)|company background|about us|authentic|fake|genuine|trust|do you have (a |an )?(physical|offline|real)? ?(store|shop|outlet))\b/i', $text)) {
             return 'BUSINESS_INFO';
         }
 
-        if (preg_match('/\b(show brands|what brands|which brands|show categories|collections)\b/i', $text)) {
-            return 'PRODUCT_BROWSE';
+        // Brand browse (generic "show all brands" type)
+        if (preg_match('/\b(show (all )?brands|what brands|which brands|show categories|all collections|list brands|all brands)\b/i', $text)) {
+            return 'BRAND_REQUEST';
         }
 
         if (preg_match('/\b(tell me about|details|description|specs|specifications|about this watch)\b/i', $text)) {
             return 'PRODUCT_DETAILS';
         }
 
-        if (preg_match('/\b(rolex|cartier|omega|patek|audemars|breitling|iwc|hublot|panerai|datejust|submariner|daytona|sku|reference|ref|model|buy|looking for|show me)\b/i', $text)) {
+        if (preg_match('/\b(under|below|between|above|over|budget|price range|less than|more than)\b/i', $text)) {
+            return 'PRODUCT_FILTER';
+        }
+
+        // Expanded brand/watch keyword list + "do you have X" phrasing
+        if (preg_match('/\b(rolex|cartier|omega|patek|audemars|breitling|iwc|hublot|panerai|vacheron|tudor|tag heuer|tagheuer|seiko|citizen|casio|tissot|longines|chopard|rado|zenith|a\.lange|nomos|glash|datejust|submariner|daytona|speedmaster|aquanaut|nautilus|sku|reference|ref\.?\s*\d|model|buy|looking for|show me|do you (have|carry|stock)|any .* (available|in stock))\b/i', $text)) {
             return 'PRODUCT_SEARCH';
         }
 
@@ -3592,23 +3613,258 @@ final class Carbon_Repro_Instant_Actions_Widget
         return 'UNKNOWN';
     }
 
+    private function detect_intents_multi($message, $catalog_suggestions = array())
+    {
+        $text = strtolower(trim((string) $message));
+        if ($text === '') {
+            return array('UNKNOWN');
+        }
+
+        // These intents are always exclusive — return immediately
+        if (preg_match('/\b(human|real agent|live agent|representative|support team|talk to (a )?person|connect me|real person|speak to (someone|a human|an agent))\b/i', $text)) {
+            return array('HUMAN_AGENT_REQUEST');
+        }
+        if (preg_match('/\b(not understanding|you (are|don\'t|do not|aren\'t) (understanding|getting it|listening)|not getting it|you don\'t get it|not helpful|that\'?s wrong|wrong answer|irrelevant result|not what i (asked|wanted|said)|stop showing|you are (dumb|stupid|useless)|are you crazy|this is (wrong|useless|irrelevant)|frustrated|i said .* not)\b/i', $text)) {
+            return array('FRUSTRATION');
+        }
+        if (preg_match('/\b(i want to sell|i want to trade|looking to sell|looking to trade|sell my|trade my|trade.?in|part.?exchange|want to sell|want to trade|cash for (my|a|an)|i have a .* (to sell|for sale)|selling my|trading my)\b/i', $text)) {
+            return array('TRADE_SELL_REQUEST');
+        }
+        if (preg_match('/([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i', $text) || preg_match('/\+?\d[\d\-\s\(\)]{7,}\d/', $text)) {
+            return array('PROVIDE_CONTACT_INFO');
+        }
+        if (preg_match('/^(hi|hello|hey|salam|assalam o alaikum|good morning|good afternoon|good evening)\b[!., ]*$/i', $text)) {
+            return array('GREETING');
+        }
+        if (preg_match('/\b(thanks|thank you|thx|ok thanks|great thanks|appreciate it)\b/i', $text) && strlen($text) < 80) {
+            return array('GRATITUDE');
+        }
+
+        // Composable intents — a single message can match multiple
+        $intents = array();
+
+        if (preg_match('/\b(where are you|where is (your|the)|physical.?(store|shop|outlet)|have.*(outlet|store|shop)|location|address|directions?|contact|phone|email|hours?|timing|open|clos(e|ed|ing)|about (your|the) (company|store|shop|business)|company background|about us|authentic|fake|genuine|trust|do you have (a |an )?(physical|offline|real)? ?(store|shop|outlet))\b/i', $text)) {
+            $intents[] = 'BUSINESS_INFO';
+        }
+
+        if (preg_match('/\b(show (all )?brands|what brands|which brands|show categories|all collections|list brands|all brands)\b/i', $text)) {
+            $intents[] = 'BRAND_REQUEST';
+        }
+
+        if (preg_match('/\b(under|below|between|above|over|budget|price range|less than|more than)\b/i', $text)) {
+            $intents[] = 'PRODUCT_FILTER';
+        } elseif (preg_match('/\b(tell me about|details|description|specs|specifications|about this watch)\b/i', $text)) {
+            $intents[] = 'PRODUCT_DETAILS';
+        } elseif (preg_match('/\b(rolex|cartier|omega|patek|audemars|breitling|iwc|hublot|panerai|vacheron|tudor|tag heuer|tagheuer|seiko|citizen|casio|tissot|longines|chopard|rado|zenith|a\.lange|nomos|glash|datejust|submariner|daytona|speedmaster|aquanaut|nautilus|sku|reference|ref\.?\s*\d|model|buy|looking for|show me|do you (have|carry|stock)|any .* (available|in stock))\b/i', $text)) {
+            $intents[] = 'PRODUCT_SEARCH';
+        } elseif (is_array($catalog_suggestions) && (! empty($catalog_suggestions['cards']) || ! empty($catalog_suggestions['links']))) {
+            $intents[] = 'PRODUCT_SEARCH';
+        }
+
+        return ! empty($intents) ? $intents : array('UNKNOWN');
+    }
+
+    private function handle_trade_sell_flow($message, $context, $lead, $conversation_id, &$assistant_meta)
+    {
+        $trade_details = isset($context['trade_details']) && is_array($context['trade_details'])
+            ? $context['trade_details']
+            : array('brand' => '', 'model' => '', 'condition' => '');
+
+        $stage = isset($context['conversation_stage']) ? $context['conversation_stage'] : 'normal';
+        $text = strtolower(trim((string) $message));
+        $reply = '';
+
+        if ($stage !== 'trade_collecting') {
+            $reply = "Thanks for your interest in selling or trading your watch! I'd love to help.\n\nTo give you an accurate quote, I need a few details:\n1. What brand is the watch? (e.g. Rolex, Omega)\n2. What is the model or reference?\n3. What condition is it in? (Excellent / Good / Fair)";
+            $stage = 'trade_collecting';
+        } else {
+            if (empty($trade_details['brand'])) {
+                $known_brands = array('rolex', 'cartier', 'omega', 'patek', 'audemars', 'breitling', 'iwc', 'hublot', 'panerai', 'vacheron', 'tudor', 'tag heuer', 'tagheuer', 'seiko', 'citizen', 'casio', 'tissot', 'longines', 'chopard', 'rado', 'zenith');
+                foreach ($known_brands as $b) {
+                    if (strpos($text, $b) !== false) {
+                        $trade_details['brand'] = ucwords($b);
+                        break;
+                    }
+                }
+            }
+            if (empty($trade_details['model'])) {
+                if (preg_match('/\b(submariner|datejust|daytona|speedmaster|aquanaut|nautilus|explorer|yachtmaster|gmt|sky.?dweller|pearlmaster|constellation|seamaster|seamaster\s*\w+|ref\.?\s*[\w\-]+)\b/i', $message, $m)) {
+                    $trade_details['model'] = $m[1];
+                }
+            }
+            if (empty($trade_details['condition'])) {
+                if (preg_match('/\b(excellent|mint|perfect|like new|very good|good|fair|average|worn|used|poor)\b/i', $message, $m)) {
+                    $trade_details['condition'] = ucfirst($m[1]);
+                }
+            }
+
+            $missing = array();
+            if (empty($trade_details['brand'])) {
+                $missing[] = 'brand (e.g. Rolex, Omega)';
+            }
+            if (empty($trade_details['model'])) {
+                $missing[] = 'model or reference number';
+            }
+            if (empty($trade_details['condition'])) {
+                $missing[] = 'condition (Excellent / Good / Fair)';
+            }
+
+            if (empty($missing)) {
+                $contact = $this->get_bot_contact_details();
+                $reply = sprintf(
+                    "Great! Here's what I have:\n• Brand: %s\n• Model: %s\n• Condition: %s\n\nOur team will review this and contact you with a quote shortly.\n\nYou can also reach us directly:\nPhone: %s\nEmail: %s",
+                    $trade_details['brand'],
+                    $trade_details['model'],
+                    $trade_details['condition'],
+                    ! empty($contact['phone']) ? $contact['phone'] : '713-705-6097',
+                    ! empty($contact['email']) ? $contact['email'] : 'info@fsfinewatches.com'
+                );
+                $assistant_meta = $this->build_assistant_meta(array('cards' => array(), 'links' => array()), 'contact', true);
+                $stage = 'trade_complete';
+            } else {
+                $reply = 'Thanks! Could you also tell me the watch\'s ' . implode(' and ', $missing) . '?';
+            }
+        }
+
+        $this->set_chat_context(
+            $conversation_id,
+            'TRADE_SELL_REQUEST',
+            $message,
+            array(),
+            array(
+                'conversation_mode' => 'trade',
+                'conversation_stage' => $stage,
+                'trade_details' => $trade_details,
+                'last_brand' => isset($context['last_brand']) ? $context['last_brand'] : '',
+                'last_price_range' => isset($context['last_price_range']) && is_array($context['last_price_range']) ? $context['last_price_range'] : array('min_price' => null, 'max_price' => null),
+            )
+        );
+
+        return $reply;
+    }
+
     private function get_chat_context($conversation_id)
     {
         $context = get_post_meta($conversation_id, '_criaw_chat_context', true);
-        return is_array($context) ? $context : array(
+        $defaults = array(
             'last_intent' => '',
             'last_query' => '',
             'last_catalog_cards' => array(),
+            'last_brand' => '',
+            'last_price_range' => array('min_price' => null, 'max_price' => null),
+            'conversation_stage' => 'normal',
+            'conversation_mode' => 'normal',
+            'trade_details' => array('brand' => '', 'model' => '', 'condition' => ''),
         );
+        return is_array($context) ? array_merge($defaults, $context) : $defaults;
     }
 
-    private function set_chat_context($conversation_id, $intent, $query, $catalog_cards)
+    private function set_chat_context($conversation_id, $intent, $query, $catalog_cards, $extra = array())
     {
+        $current = $this->get_chat_context($conversation_id);
+        $merged = array_merge($current, is_array($extra) ? $extra : array());
+
         update_post_meta($conversation_id, '_criaw_chat_context', array(
             'last_intent' => (string) $intent,
             'last_query' => (string) $query,
             'last_catalog_cards' => is_array($catalog_cards) ? array_values($catalog_cards) : array(),
+            'last_brand' => isset($merged['last_brand']) ? (string) $merged['last_brand'] : '',
+            'last_price_range' => isset($merged['last_price_range']) && is_array($merged['last_price_range']) ? $merged['last_price_range'] : array('min_price' => null, 'max_price' => null),
+            'conversation_stage' => isset($merged['conversation_stage']) ? (string) $merged['conversation_stage'] : 'normal',
+            'conversation_mode' => isset($merged['conversation_mode']) ? (string) $merged['conversation_mode'] : 'normal',
+            'trade_details' => isset($merged['trade_details']) && is_array($merged['trade_details']) ? $merged['trade_details'] : array('brand' => '', 'model' => '', 'condition' => ''),
         ));
+    }
+
+    private function extract_contact_details_from_text($text)
+    {
+        $text = trim((string) $text);
+        $details = array('name' => '', 'email' => '', 'phone' => '');
+        if ($text === '') {
+            return $details;
+        }
+
+        if (preg_match('/([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i', $text, $m)) {
+            $details['email'] = sanitize_email($m[1]);
+        }
+        if (preg_match('/(\+?\d[\d\-\s\(\)]{7,}\d)/', $text, $m)) {
+            $details['phone'] = preg_replace('/[^0-9+]/', '', $m[1]);
+        }
+        if (preg_match('/\b(?:my name is|i am|this is)\s+([a-z][a-z\s\'.-]{1,80})$/i', $text, $m)) {
+            $details['name'] = sanitize_text_field(trim($m[1]));
+        }
+
+        return $details;
+    }
+
+    private function extract_message_entities($message, $categories, $products)
+    {
+        $price = $this->parse_price_constraints($message);
+        $brands = $this->extract_brand_filters($message, $categories, $products);
+
+        return array(
+            'brand' => ! empty($brands) ? (string) $brands[0] : '',
+            'brands' => $brands,
+            'brand_explicit' => ! empty($brands),
+            'min_price' => isset($price['min_price']) ? $price['min_price'] : null,
+            'max_price' => isset($price['max_price']) ? $price['max_price'] : null,
+            'has_price_filter' => ! empty($price['has_price_filter']),
+            'price_explicit' => ! empty($price['has_price_filter']),
+        );
+    }
+
+    private function is_followup_product_filter_message($message)
+    {
+        $text = strtolower(trim((string) $message));
+        if ($text === '') {
+            return false;
+        }
+
+        return (bool) preg_match('/\b(cheaper|lower|budget|under|below|within budget|show more|more options|similar|these|those|that one|same brand|same)\b/i', $text);
+    }
+
+    private function merge_entities_with_context($entities, $context, $intent, $message)
+    {
+        $entities = is_array($entities) ? $entities : array();
+        $context = is_array($context) ? $context : array();
+        $merged = $entities;
+        $intent = strtoupper((string) $intent);
+        $followup = $this->is_followup_product_filter_message($message);
+        $is_product_intent = in_array($intent, array('PRODUCT_SEARCH', 'PRODUCT_FILTER', 'PRODUCT_DETAILS'), true);
+
+        if (empty($merged['brand']) && ! empty($context['last_brand']) && ($is_product_intent || $followup)) {
+            $merged['brand'] = (string) $context['last_brand'];
+            $merged['brands'] = array($merged['brand']);
+            $merged['brand_explicit'] = false;
+        }
+
+        if (empty($merged['has_price_filter']) && ! empty($context['last_price_range']) && is_array($context['last_price_range']) && ($intent === 'PRODUCT_FILTER' || $followup)) {
+            $merged['min_price'] = isset($context['last_price_range']['min_price']) ? $context['last_price_range']['min_price'] : null;
+            $merged['max_price'] = isset($context['last_price_range']['max_price']) ? $context['last_price_range']['max_price'] : null;
+            $merged['has_price_filter'] = ($merged['min_price'] !== null || $merged['max_price'] !== null);
+            $merged['price_explicit'] = false;
+        }
+
+        return $merged;
+    }
+
+    private function build_constrained_search_query($message, $entities)
+    {
+        $parts = array(trim((string) $message));
+        if (! empty($entities['brand'])) {
+            $parts[] = (string) $entities['brand'];
+        }
+        if (! empty($entities['has_price_filter'])) {
+            if ($entities['min_price'] !== null && $entities['max_price'] !== null) {
+                $parts[] = 'between ' . (int) $entities['min_price'] . ' and ' . (int) $entities['max_price'];
+            } elseif ($entities['max_price'] !== null) {
+                $parts[] = 'under ' . (int) $entities['max_price'];
+            } elseif ($entities['min_price'] !== null) {
+                $parts[] = 'above ' . (int) $entities['min_price'];
+            }
+        }
+
+        return trim(implode(' ', array_filter($parts)));
     }
 
     private function parse_price_value($price_html)
@@ -3658,6 +3914,22 @@ final class Carbon_Repro_Instant_Actions_Widget
 
     private function get_brand_browse_suggestions()
     {
+        if (! $this->is_ecommerce_mode()) {
+            return array(
+                'cards' => array(),
+                'links' => array(),
+                'has_multiple_products' => false,
+                'is_generic_query' => true,
+                'intent_query' => 'brands',
+                'original_query' => 'brands',
+                'correction' => '',
+                'intent_type' => 'browse',
+                'model_names' => array(),
+                'price_filter' => array('has_price_filter' => false, 'min_price' => null, 'max_price' => null),
+                'brand_filters' => array(),
+            );
+        }
+
         $index = get_option(self::CATALOG_INDEX_OPTION_KEY, array());
         $categories = isset($index['categories']) && is_array($index['categories']) ? $index['categories'] : array();
         $products = isset($index['products']) && is_array($index['products']) ? $index['products'] : array();
@@ -3736,7 +4008,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             if ($name === '') {
                 continue;
             }
-            if ((int) (isset($brand_counts[strtolower($name)]) ? $brand_counts[strtolower($name)] : 0) < 4) {
+            if ((int) (isset($brand_counts[strtolower($name)]) ? $brand_counts[strtolower($name)] : 0) < 1) {
                 continue;
             }
             foreach ($tokens as $token) {
@@ -3761,26 +4033,28 @@ final class Carbon_Repro_Instant_Actions_Widget
     private function get_business_info_reply()
     {
         $contact = $this->get_bot_contact_details();
-        $parts = array();
-        $name = trim((string) $this->get_setting('business_name', 'FS Fine Watches'));
-        if ($name !== '') {
-            $parts[] = $name;
-        }
+        $name = trim((string) $this->get_setting('business_name', 'our store'));
+
+        $lines = array();
         if (! empty($contact['location'])) {
-            $parts[] = sprintf(__('Location: %s', 'carbon-repro-widget'), $contact['location']);
+            $lines[] = 'Address: ' . $contact['location'];
         }
         if (! empty($contact['phone'])) {
-            $parts[] = sprintf(__('Phone: %s', 'carbon-repro-widget'), $contact['phone']);
+            $lines[] = 'Phone: ' . $contact['phone'];
         }
         if (! empty($contact['email'])) {
-            $parts[] = sprintf(__('Email: %s', 'carbon-repro-widget'), $contact['email']);
+            $lines[] = 'Email: ' . $contact['email'];
+        }
+        if (! empty($contact['location_url'])) {
+            $lines[] = 'Directions: ' . esc_url($contact['location_url']);
         }
 
-        if (empty($parts)) {
-            return __('Sure. I can help with store details. Please ask for location, phone, or email and I will share it.', 'carbon-repro-widget');
+        if (empty($lines)) {
+            return __('Sure! I can help with store details. Use the contact buttons below to reach us directly.', 'carbon-repro-widget');
         }
 
-        return __('Sure — here are our store details:', 'carbon-repro-widget') . "\n" . implode("\n", $parts);
+        $header = $name !== '' ? 'Here are the details for ' . $name . ':' : 'Here are our store details:';
+        return $header . "\n" . implode("\n", $lines) . "\n\nYou can also use the buttons below to call, email, or get directions.";
     }
 
     private function get_static_intent_reply($query, $lead, $catalog_suggestions = array())
@@ -4290,9 +4564,9 @@ final class Carbon_Repro_Instant_Actions_Widget
         return false;
     }
 
-    private function get_catalog_suggestions_for_query($query, $filters = array())
+    private function get_catalog_suggestions_for_query($query)
     {
-        if (! $this->is_woocommerce_active() || $this->get_setting('catalog_index_enabled', '0') !== '1') {
+        if (! $this->is_ecommerce_mode() || $this->get_setting('catalog_index_enabled', '0') !== '1') {
             return array('cards' => array(), 'links' => array());
         }
 
@@ -4334,17 +4608,6 @@ final class Carbon_Repro_Instant_Actions_Widget
         $query_lower = strtolower($query);
         $has_numeric_token = (bool) preg_match('/\d{3,}/', $query);
         $is_generic_query = count($tokens) <= 2 && ! $has_numeric_token;
-
-        // Merge persistent conversation filters into price_filter
-        if (! empty($filters['max_price']) && (float) $filters['max_price'] > 0 && $price_filter['max_price'] === null) {
-            $price_filter['max_price'] = (float) $filters['max_price'];
-            $price_filter['has_price_filter'] = true;
-        }
-        if (! empty($filters['min_price']) && (float) $filters['min_price'] > 0 && $price_filter['min_price'] === null) {
-            $price_filter['min_price'] = (float) $filters['min_price'];
-            $price_filter['has_price_filter'] = true;
-        }
-
         $sku_tokens = array_values(array_filter($tokens, function ($token) {
             return (bool) preg_match('/[a-z]{1,4}\d{5,}|\d{5,}/i', (string) $token);
         }));
@@ -4578,6 +4841,27 @@ final class Carbon_Repro_Instant_Actions_Widget
                     break;
                 }
             }
+            if (empty($links)) {
+                foreach ($categories as $category) {
+                    if (
+                        ! empty($category['name']) && ! empty($category['url']) &&
+                        stripos((string) $category['name'], (string) $brand_filters[0]) !== false
+                    ) {
+                        $links[] = array(
+                            'label' => sprintf(__('View All %s', 'carbon-repro-widget'), (string) $brand_filters[0]),
+                            'url' => (string) $category['url'],
+                        );
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (empty($links) && $category_match && ! empty($category_match['url']) && ! empty($category_match['name'])) {
+            $links[] = array(
+                'label' => sprintf(__('View All %s', 'carbon-repro-widget'), $category_match['name']),
+                'url' => $category_match['url'],
+            );
         }
 
         $cards = $this->dedupe_catalog_cards($cards);
@@ -5193,21 +5477,25 @@ final class Carbon_Repro_Instant_Actions_Widget
             'human_reply' => __('Human reply sent', 'carbon-repro-widget'),
             'limit_reached' => __('Chat message limit reached', 'carbon-repro-widget'),
         );
-        $contact = $this->get_bot_contact_details();
-        $body = array(
-            '[' . $this->get_setting('business_name', get_bloginfo('name')) . '] ' . (isset($label_map[$context]) ? $label_map[$context] : __('Widget chat update', 'carbon-repro-widget')),
-            __('Name:', 'carbon-repro-widget') . ' ' . (! empty($lead['name']) ? $lead['name'] : __('Unknown', 'carbon-repro-widget')),
-            __('Phone:', 'carbon-repro-widget') . ' ' . (! empty($lead['phone']) ? $lead['phone'] : __('Unknown', 'carbon-repro-widget')),
-            __('Need:', 'carbon-repro-widget') . ' ' . (! empty($lead['looking_for']) ? $lead['looking_for'] : __('Not provided', 'carbon-repro-widget')),
-        );
+        $contact     = $this->get_bot_contact_details();
+        $event_label = isset($label_map[$context]) ? $label_map[$context] : __('Widget chat update', 'carbon-repro-widget');
+        $biz_name    = $this->get_setting('business_name', get_bloginfo('name'));
+
+        $lines = array();
+        $lines[] = '[' . $biz_name . '] ' . $event_label;
+        $lines[] = '---';
+        $lines[] = 'Name:  ' . (! empty($lead['name']) ? $lead['name'] : 'Unknown');
+        $lines[] = 'Phone: ' . (! empty($lead['phone']) ? $lead['phone'] : 'Unknown');
+        $lines[] = 'Req:   ' . (! empty($lead['looking_for']) ? $lead['looking_for'] : 'Not provided');
         if (! empty($contact['phone'])) {
-            $body[] = __('Store Phone:', 'carbon-repro-widget') . ' ' . $contact['phone'];
+            $lines[] = '---';
+            $lines[] = 'Store: ' . $contact['phone'];
         }
         if ($conversation_id > 0) {
-            $body[] = admin_url('admin.php?page=carbon-repro-widget-conversations&conversation_id=' . $conversation_id);
+            $lines[] = 'View:  ' . admin_url('admin.php?page=carbon-repro-widget-conversations&conversation_id=' . $conversation_id);
         }
 
-        $result = $this->send_twilio_sms($to, implode("\n", $body));
+        $result = $this->send_twilio_sms($to, implode("\n", $lines));
         $this->append_notification_timeline(
             $conversation_id,
             'sms',
@@ -5233,24 +5521,32 @@ final class Carbon_Repro_Instant_Actions_Widget
             return;
         }
 
-        $contact = $this->get_bot_contact_details();
-        $body = array(
-            wp_strip_all_tags((string) $message, true),
-        );
-        if (! empty($contact['phone'])) {
-            $body[] = __('Phone:', 'carbon-repro-widget') . ' ' . $contact['phone'];
-        }
-        if (! empty($contact['email'])) {
-            $body[] = __('Email:', 'carbon-repro-widget') . ' ' . $contact['email'];
-        }
-        if (! empty($contact['location'])) {
-            $body[] = __('Location:', 'carbon-repro-widget') . ' ' . $contact['location'];
-        }
-        if (! empty($contact['location_url'])) {
-            $body[] = __('Map:', 'carbon-repro-widget') . ' ' . $contact['location_url'];
+        $contact      = $this->get_bot_contact_details();
+        $biz_name     = $this->get_setting('business_name', get_bloginfo('name'));
+        $clean_msg    = trim(wp_strip_all_tags((string) $message, true));
+
+        $lines = array();
+        $lines[] = $clean_msg;
+
+        $has_contact = ! empty($contact['phone']) || ! empty($contact['email']) || ! empty($contact['location']);
+        if ($has_contact) {
+            $lines[] = '';
+            $lines[] = 'Contact ' . $biz_name . ':';
+            if (! empty($contact['phone'])) {
+                $lines[] = 'Phone: ' . $contact['phone'];
+            }
+            if (! empty($contact['email'])) {
+                $lines[] = 'Email: ' . $contact['email'];
+            }
+            if (! empty($contact['location'])) {
+                $lines[] = 'Location: ' . $contact['location'];
+            }
+            if (! empty($contact['location_url'])) {
+                $lines[] = 'Map: ' . esc_url($contact['location_url']);
+            }
         }
 
-        $result = $this->send_twilio_sms($lead['phone'], implode("\n", $body));
+        $result = $this->send_twilio_sms($lead['phone'], implode("\n", $lines));
         $this->append_notification_timeline(
             $conversation_id,
             'sms',
@@ -5450,6 +5746,7 @@ final class Carbon_Repro_Instant_Actions_Widget
     {
         return array(
             'white_label_plugin_name' => 'Carbon Repro Widget',
+            'assistant_mode' => 'ecommerce',
             'business_name' => '',
             'business_industry' => '',
             'business_location' => '',

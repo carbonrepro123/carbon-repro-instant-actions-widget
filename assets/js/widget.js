@@ -15,7 +15,6 @@
   var pendingWidgetSubmission = false;
   var chatConversationId = null;
   var chatInitialized = false;
-  var chatState = { isChatStarted: false };
   var chatMessageCount = 0;
   var chatPollTimer = null;
   var toastTimer = null;
@@ -278,6 +277,29 @@
     if (elements.chatMessages) {
       elements.chatMessages.style.display = show ? 'none' : 'flex';
     }
+    if (elements.chatForm) {
+      elements.chatForm.style.display = show ? 'none' : 'flex';
+    }
+    if (elements.chatHistory) {
+      elements.chatHistory.style.display = show ? 'none' : elements.chatHistory.style.display;
+    }
+    if (elements.chatResetBtn) {
+      elements.chatResetBtn.style.display = show ? 'none' : '';
+    }
+  }
+
+  function clearLeadInputs() {
+    var elements = getElements();
+    if (elements.chatLeadName) { elements.chatLeadName.value = ''; }
+    if (elements.chatLeadEmail) { elements.chatLeadEmail.value = ''; }
+    if (elements.chatLeadPhone) { elements.chatLeadPhone.value = ''; }
+    if (elements.chatLeadNeed) { elements.chatLeadNeed.value = ''; }
+    if (elements.chatConsent) { elements.chatConsent.checked = false; }
+    if (elements.chatSmsConsent) { elements.chatSmsConsent.checked = false; }
+    if (elements.chatWhatsappConsent) { elements.chatWhatsappConsent.checked = false; }
+    setConsentPreference(false);
+    setSmsConsentPreference(false);
+    setWhatsappConsentPreference(false);
   }
 
   function populateLeadInputs() {
@@ -353,8 +375,23 @@
 
     isNearBottom = (container.scrollHeight - (container.scrollTop + container.clientHeight)) < 140;
     if (force || isNearBottom) {
+      container.style.scrollBehavior = 'auto';
       container.scrollTop = container.scrollHeight;
+      container.style.scrollBehavior = '';
     }
+  }
+
+  function scrollToMessageStart(row) {
+    var elements = getElements();
+    var container = elements.chatMessages;
+    if (!container || !row) {
+      return;
+    }
+    var rowRect = row.getBoundingClientRect();
+    var containerRect = container.getBoundingClientRect();
+    container.style.scrollBehavior = 'auto';
+    container.scrollTop = container.scrollTop + (rowRect.top - containerRect.top);
+    container.style.scrollBehavior = '';
   }
 
   function renderPendingUploads() {
@@ -671,7 +708,7 @@
       return;
     }
 
-    var messages = Array.prototype.map.call(elements.chatMessages.querySelectorAll('.watch-chat-message-row'), function (node) {
+    var messages = Array.prototype.map.call(elements.chatMessages.querySelectorAll('.watch-chat-message-row:not(.watch-chat-typing)'), function (node) {
       var meta = null;
       try {
         meta = node.dataset && node.dataset.messageMeta ? JSON.parse(node.dataset.messageMeta) : null;
@@ -732,6 +769,9 @@
           messages: restoredMessages
         });
 
+        toggleIntake(false);
+        toggleHistoryPanel(false);
+
         if (elements.chatMessages) {
           elements.chatMessages.innerHTML = '';
           restoredMessages.forEach(function (message) {
@@ -741,14 +781,12 @@
               addChatMessage('user', message.content || '', '', message.meta || null);
             }
           });
+          scrollChatToBottom(true);
         }
 
         chatInitialized = true;
-        chatState.isChatStarted = true;
         chatMessageCount = restoredMessages.length;
         markConversationRead(chatConversationId);
-        toggleHistoryPanel(false);
-        applyChatUiState();
         startChatPolling();
       });
       wrapper.appendChild(item);
@@ -764,6 +802,7 @@
 
     if (show) {
       renderArchivedChats();
+      elements.chatHistory.style.display = '';
       elements.chatHistory.classList.add('active');
       elements.chatHistory.setAttribute('aria-hidden', 'false');
     } else {
@@ -785,9 +824,10 @@
 
     chatConversationId = null;
     chatInitialized = false;
-    chatState.isChatStarted = false;
     chatMessageCount = 0;
-    setCurrentChatSession({ conversationId: null, messages: [], lead: getStoredLead() });
+    setStoredLead(null);
+    clearLeadInputs();
+    setCurrentChatSession({ conversationId: null, messages: [], lead: null });
     markConversationRead(null);
 
     var elements = getElements();
@@ -797,6 +837,12 @@
 
     initializeChat();
     toggleHistoryPanel(false);
+
+    var elementsAfter = getElements();
+    if (elementsAfter.chatResetBtn) {
+      elementsAfter.chatResetBtn.style.display = 'none';
+    }
+
     startChatPolling();
   }
 
@@ -1139,36 +1185,17 @@
 
   function addAssistantReply(text, extraClass, meta) {
     var parts = splitAssistantReply(text);
+    var firstRow = null;
     if (!parts.length) {
-      addChatMessage('assistant', '', extraClass, meta);
-      return;
+      firstRow = addChatMessage('assistant', '', extraClass, meta);
+    } else {
+      parts.forEach(function (part, index) {
+        var row = addChatMessage('assistant', part, extraClass, index === parts.length - 1 ? meta : null);
+        if (index === 0) { firstRow = row; }
+      });
     }
-
-    parts.forEach(function (part, index) {
-      addChatMessage('assistant', part, extraClass, index === parts.length - 1 ? meta : null);
-    });
-  }
-
-  function applyChatUiState() {
-    var elements = getElements();
-    if (!elements.chat) { return; }
-
-    var hasArchives = getArchivedChats().length > 0;
-    var hasMessages = !!(elements.chatMessages &&
-      elements.chatMessages.querySelector('.watch-chat-message:not(.watch-chat-typing)'));
-
-    // Previous Chats button: only before chat starts, only if archives exist
-    if (elements.chatPreviousBtn) {
-      elements.chatPreviousBtn.style.display = (!chatState.isChatStarted && hasArchives) ? '' : 'none';
-    }
-    // Reset button: only after chat started AND has at least one real message
-    if (elements.chatResetBtn) {
-      elements.chatResetBtn.style.display = (chatState.isChatStarted && hasMessages) ? '' : 'none';
-    }
-    // Composer (input + send): only visible after chat started
-    var composer = elements.chat.querySelector('.watch-chat-composer');
-    if (composer) {
-      composer.style.display = chatState.isChatStarted ? '' : 'none';
+    if (firstRow) {
+      scrollToMessageStart(firstRow);
     }
   }
 
@@ -1194,20 +1221,12 @@
         });
       }
       chatInitialized = true;
-      chatState.isChatStarted = true;
       chatMessageCount = session.messages.length;
       markConversationRead(chatConversationId);
-      applyChatUiState();
       return;
     }
 
-    toggleIntake(settings.intakeRequired === '1');
-    if (settings.intakeRequired !== '1') {
-      addAssistantReply(welcomeMessage, '', null);
-      chatInitialized = true;
-      chatState.isChatStarted = true;
-    }
-    applyChatUiState();
+    toggleIntake(true);
   }
 
   function startChatPolling() {
@@ -1473,9 +1492,7 @@
       if (elementsNow.chatMessages) {
         elementsNow.chatMessages.innerHTML = '';
       }
-      chatState.isChatStarted = true;
       toggleIntake(false);
-      applyChatUiState();
       if (lead.looking_for) {
         addChatMessage('user', lead.looking_for);
       }
@@ -1546,6 +1563,10 @@
 
     var elements = getElements();
     if (!elements.chatInput || !chatNonce) {
+      return;
+    }
+
+    if (chatRequestInFlight) {
       return;
     }
 
@@ -1625,7 +1646,6 @@
     }).finally(function () {
       chatRequestInFlight = false;
       setChatLoading(false);
-      applyChatUiState();
       if (elements.chatInput) {
         elements.chatInput.focus();
       }
@@ -1666,10 +1686,6 @@
     if (!elements.widget) {
       return;
     }
-
-    // Clear current session on every page load so chat always starts fresh.
-    // Previous conversations remain accessible via the Previous Chats button.
-    try { window.localStorage.removeItem(SESSION_KEY); } catch (e) {}
 
     renderPendingUploads();
     updateUnreadBadge();
