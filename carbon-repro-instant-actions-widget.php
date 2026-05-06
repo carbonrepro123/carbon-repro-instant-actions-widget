@@ -242,6 +242,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             'catalog_index_enabled' => __('Enable Ecommerce Catalog Index', 'carbon-repro-widget'),
             'catalog_index_knowledge' => __('Indexed Catalog Knowledge', 'carbon-repro-widget'),
             'brand_logo_url' => __('Business Logo', 'carbon-repro-widget'),
+            'footer_logo_url' => __('Footer Logo', 'carbon-repro-widget'),
             'launcher_icon_url' => __('Launcher Icon', 'carbon-repro-widget'),
             'theme_preset' => __('Theme Preset', 'carbon-repro-widget'),
             'primary_color' => __('Primary Color', 'carbon-repro-widget'),
@@ -255,7 +256,8 @@ final class Carbon_Repro_Instant_Actions_Widget
             'label_text' => __('Launcher Label', 'carbon-repro-widget'),
             'menu_title' => __('Menu Title', 'carbon-repro-widget'),
             'form_title' => __('Form Title', 'carbon-repro-widget'),
-            'footer_brand' => __('Footer Brand', 'carbon-repro-widget'),
+            'footer_brand' => __('Powered By Name', 'carbon-repro-widget'),
+            'powered_by_url' => __('Powered By Link', 'carbon-repro-widget'),
             'phone_number' => __('Phone Number', 'carbon-repro-widget'),
             'store_contact_phone' => __('Bot Contact Phone', 'carbon-repro-widget'),
             'store_contact_email' => __('Bot Contact Email', 'carbon-repro-widget'),
@@ -295,9 +297,9 @@ final class Carbon_Repro_Instant_Actions_Widget
             $section = 'criaw_chat_section';
             if (in_array($key, array('white_label_plugin_name', 'business_name', 'business_industry', 'business_location', 'business_services', 'business_faqs', 'business_terminology_notes', 'qualification_questions', 'auto_crawl_enabled', 'crawl_focus_paths', 'crawled_knowledge', 'catalog_index_enabled', 'catalog_index_knowledge'), true)) {
                 $section = 'criaw_business_section';
-            } elseif (in_array($key, array('brand_logo_url', 'launcher_icon_url', 'theme_preset', 'primary_color', 'secondary_color', 'accent_color', 'panel_background_color', 'surface_color', 'text_color', 'button_text_color', 'launcher_text_color'), true)) {
+            } elseif (in_array($key, array('brand_logo_url', 'footer_logo_url', 'launcher_icon_url', 'theme_preset', 'primary_color', 'secondary_color', 'accent_color', 'panel_background_color', 'surface_color', 'text_color', 'button_text_color', 'launcher_text_color'), true)) {
                 $section = 'criaw_design_section';
-            } elseif (in_array($key, array('label_text', 'menu_title', 'form_title', 'footer_brand', 'phone_number', 'store_contact_phone', 'store_contact_email', 'store_contact_location', 'store_contact_location_url', 'wpforms_id', 'form_enabled', 'call_enabled', 'text_enabled', 'call_label', 'text_label'), true)) {
+            } elseif (in_array($key, array('label_text', 'menu_title', 'form_title', 'footer_brand', 'powered_by_url', 'phone_number', 'store_contact_phone', 'store_contact_email', 'store_contact_location', 'store_contact_location_url', 'wpforms_id', 'form_enabled', 'call_enabled', 'text_enabled', 'call_label', 'text_label'), true)) {
                 $section = 'criaw_widget_section';
             }
 
@@ -331,6 +333,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             'catalog_index_enabled' => empty($input['catalog_index_enabled']) ? '0' : '1',
             'catalog_index_knowledge' => sanitize_textarea_field(isset($input['catalog_index_knowledge']) ? $input['catalog_index_knowledge'] : $defaults['catalog_index_knowledge']),
             'brand_logo_url' => esc_url_raw(isset($input['brand_logo_url']) ? $input['brand_logo_url'] : $defaults['brand_logo_url']),
+            'footer_logo_url' => esc_url_raw(isset($input['footer_logo_url']) ? $input['footer_logo_url'] : $defaults['footer_logo_url']),
             'launcher_icon_url' => esc_url_raw(isset($input['launcher_icon_url']) ? $input['launcher_icon_url'] : $defaults['launcher_icon_url']),
             'theme_preset' => sanitize_text_field(isset($input['theme_preset']) ? $input['theme_preset'] : $defaults['theme_preset']),
             'primary_color' => sanitize_hex_color(isset($input['primary_color']) ? $input['primary_color'] : $defaults['primary_color']) ?: $defaults['primary_color'],
@@ -345,6 +348,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             'menu_title' => sanitize_text_field(isset($input['menu_title']) ? $input['menu_title'] : $defaults['menu_title']),
             'form_title' => sanitize_text_field(isset($input['form_title']) ? $input['form_title'] : $defaults['form_title']),
             'footer_brand' => sanitize_text_field(isset($input['footer_brand']) ? $input['footer_brand'] : $defaults['footer_brand']),
+            'powered_by_url' => esc_url_raw(isset($input['powered_by_url']) ? $input['powered_by_url'] : $defaults['powered_by_url']),
             'phone_number' => preg_replace('/[^0-9+]/', '', (string) (isset($input['phone_number']) ? $input['phone_number'] : $defaults['phone_number'])),
             'store_contact_phone' => preg_replace('/[^0-9+]/', '', (string) (isset($input['store_contact_phone']) ? $input['store_contact_phone'] : $defaults['store_contact_phone'])),
             'store_contact_email' => sanitize_email(isset($input['store_contact_email']) ? $input['store_contact_email'] : $defaults['store_contact_email']),
@@ -472,7 +476,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             return;
         }
 
-        if (in_array($key, array('brand_logo_url', 'launcher_icon_url'), true)) {
+        if (in_array($key, array('brand_logo_url', 'footer_logo_url', 'launcher_icon_url'), true)) {
             printf(
                 '<input type="text" id="%1$s" name="%2$s[%1$s]" value="%3$s" class="regular-text criaw-logo-url" /> <button type="button" class="button criaw-upload-logo" data-target="%1$s">%4$s</button>',
                 esc_attr($key),
@@ -494,7 +498,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             $attrs = ' min="1" step="1"';
         } elseif (in_array($key, array('notification_email', 'store_contact_email'), true)) {
             $type = 'email';
-        } elseif ($key === 'store_contact_location_url') {
+        } elseif (in_array($key, array('store_contact_location_url', 'powered_by_url'), true)) {
             $type = 'url';
         } elseif (in_array($key, array('openai_api_key', 'twilio_auth_token'), true)) {
             $type = 'password';
@@ -614,6 +618,9 @@ final class Carbon_Repro_Instant_Actions_Widget
         $chatbot_title = $this->get_setting('chatbot_title', 'AI Assistant');
         $chat_enabled = $this->is_chatbot_enabled();
         $brand_logo_url = $this->get_setting('brand_logo_url', '');
+        $footer_logo_url = $this->get_setting('footer_logo_url', '');
+        $effective_footer_logo = $footer_logo_url !== '' ? $footer_logo_url : $brand_logo_url;
+        $powered_by_url = $this->get_setting('powered_by_url', '');
         $launcher_icon_url = $this->get_setting('launcher_icon_url', '');
         $theme_colors = $this->get_theme_colors();
         $form_enabled = $this->get_setting('form_enabled', '1') === '1';
@@ -692,14 +699,20 @@ final class Carbon_Repro_Instant_Actions_Widget
 
                 <div class="watch-menu-footer">
                     <div class="watch-footer-content">
-                        <?php if ($brand_logo_url !== '') : ?>
-                            <img src="<?php echo esc_url($brand_logo_url); ?>" class="watch-footer-logo" alt="<?php echo esc_attr($footer_brand); ?>" style="height: 20px; object-fit: contain; opacity: 0.9;" />
+                        <?php if ($effective_footer_logo !== '') : ?>
+                            <img src="<?php echo esc_url($effective_footer_logo); ?>" class="watch-footer-logo" alt="<?php echo esc_attr($footer_brand); ?>" style="height: 20px; object-fit: contain; opacity: 0.9;" />
                         <?php else : ?>
                             <svg class="watch-footer-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"></path>
                             </svg>
                         <?php endif; ?>
-                        <small><?php echo wp_kses_post(sprintf(__('Powered by <strong>%s</strong>', 'carbon-repro-widget'), esc_html($footer_brand))); ?></small>
+                        <small><?php
+                            $brand_label = '<strong>' . esc_html($footer_brand) . '</strong>';
+                            if ($powered_by_url !== '') {
+                                $brand_label = '<a href="' . esc_url($powered_by_url) . '" target="_blank" rel="noopener noreferrer" class="watch-powered-by-link">' . $brand_label . '</a>';
+                            }
+                            echo wp_kses_post(sprintf(__('Powered by %s', 'carbon-repro-widget'), $brand_label));
+                        ?></small>
                     </div>
                 </div>
             </div>
@@ -5450,6 +5463,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             'catalog_index_enabled' => '0',
             'catalog_index_knowledge' => '',
             'brand_logo_url' => '',
+            'footer_logo_url' => '',
             'launcher_icon_url' => '',
             'theme_preset' => 'custom',
             'primary_color' => '#126A59',
@@ -5464,6 +5478,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             'menu_title' => 'Instant Actions',
             'form_title' => 'Get Your Strategy',
             'footer_brand' => 'Carbon Repro',
+            'powered_by_url' => '',
             'phone_number' => '7137056097',
             'store_contact_phone' => '',
             'store_contact_email' => '',

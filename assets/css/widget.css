@@ -466,6 +466,9 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   transition: color 0.3s ease;
 }
 .watch-menu-footer:hover strong { color: var(--watch-secondary); }
+.watch-powered-by-link,
+.watch-powered-by-link:visited { color: inherit; text-decoration: none; }
+.watch-powered-by-link:hover strong { color: var(--watch-secondary) !important; }
 
 /* --------------------------------------------------------------------------
    12. Form popup
