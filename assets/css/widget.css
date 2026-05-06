@@ -612,7 +612,22 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   color: #fff !important;
 }
 .watch-chat-start-btn:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
-.watch-chat-start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.watch-chat-start-btn:disabled { opacity: 1; cursor: not-allowed; }
+
+/* Spinner inside Start Chat button while loading */
+.watch-btn-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: watch-spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+@keyframes watch-spin {
+  to { transform: rotate(360deg); }
+}
 
 /* --------------------------------------------------------------------------
    15. Chat message bubbles

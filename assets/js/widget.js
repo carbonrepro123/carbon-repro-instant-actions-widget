@@ -1477,30 +1477,17 @@
     payload.append('sms_updates_opt_in', elements.chatSmsConsent && elements.chatSmsConsent.checked ? '1' : '0');
     payload.append('whatsapp_updates_opt_in', elements.chatWhatsappConsent && elements.chatWhatsappConsent.checked ? '1' : '0');
 
-    // Immediately switch to chat view and show typing indicator
-    var elementsEarly = getElements();
-    if (elementsEarly.chatMessages) {
-      elementsEarly.chatMessages.innerHTML = '';
+    // Show loading state on the start button while waiting for server
+    if (elements.chatStart) {
+      elements.chatStart.disabled = true;
+      elements.chatStart.dataset.origText = elements.chatStart.textContent;
+      elements.chatStart.innerHTML = '<span class="watch-btn-spinner"></span>';
     }
-    toggleIntake(false);
-    chatState.isChatStarted = true;
-    applyChatUiState();
-    if (lead.looking_for) {
-      addChatMessage('user', lead.looking_for);
-    }
-    var typingBubble = addChatMessage('assistant', strings.thinking || 'Typing...', 'watch-chat-typing');
 
     chatRequestInFlight = true;
-    setChatLoading(true);
     postFormData(payload).then(function (data) {
-      if (typingBubble && typingBubble.parentNode) {
-        typingBubble.parentNode.removeChild(typingBubble);
-      }
       if (!data || !data.success || !data.data) {
         showToast((data && data.data && data.data.message) || strings.error || 'Unable to start chat.');
-        toggleIntake(true);
-        chatState.isChatStarted = false;
-        applyChatUiState();
         return;
       }
 
@@ -1516,21 +1503,31 @@
         messages: [],
         lead: getStoredLead()
       });
+      var elementsNow = getElements();
+      if (elementsNow.chatMessages) {
+        elementsNow.chatMessages.innerHTML = '';
+      }
+      toggleIntake(false);
+      chatState.isChatStarted = true;
+      if (lead.looking_for) {
+        addChatMessage('user', lead.looking_for);
+      }
       addAssistantReply(data.data.reply || welcomeMessage, '', {
         catalogCards: data.data.catalog_cards || [],
         catalogLinks: data.data.catalog_links || [],
         contactActions: data.data.contact_actions || []
       });
+      applyChatUiState();
       startChatPolling();
     }).catch(function () {
-      if (typingBubble && typingBubble.parentNode) {
-        typingBubble.parentNode.removeChild(typingBubble);
-      }
       showToast(strings.error || 'Unable to start chat.');
     }).finally(function () {
       chatRequestInFlight = false;
-      setChatLoading(false);
-      applyChatUiState();
+      var el = getElements();
+      if (el.chatStart) {
+        el.chatStart.disabled = false;
+        el.chatStart.textContent = el.chatStart.dataset.origText || 'Start Chat';
+      }
     });
   }
 
