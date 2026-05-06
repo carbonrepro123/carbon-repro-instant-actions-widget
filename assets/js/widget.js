@@ -1507,7 +1507,6 @@
       if (elementsNow.chatMessages) {
         elementsNow.chatMessages.innerHTML = '';
       }
-      toggleIntake(false);
       chatState.isChatStarted = true;
       if (lead.looking_for) {
         addChatMessage('user', lead.looking_for);
@@ -1517,6 +1516,7 @@
         catalogLinks: data.data.catalog_links || [],
         contactActions: data.data.contact_actions || []
       });
+      toggleIntake(false);
       applyChatUiState();
       startChatPolling();
     }).catch(function () {

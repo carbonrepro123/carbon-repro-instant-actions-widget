@@ -1206,9 +1206,12 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   display: block !important;
 }
 .watch-chat-send:hover:not(:disabled) {
-  background: var(--watch-secondary);
+  background: var(--watch-secondary) !important;
   transform: scale(1.10);
+  box-shadow: none !important;
+  outline: none !important;
 }
+.watch-chat-send:focus { outline: none !important; box-shadow: none !important; }
 .watch-chat-send:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* --------------------------------------------------------------------------
