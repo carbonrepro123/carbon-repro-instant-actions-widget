@@ -5239,11 +5239,11 @@ final class Carbon_Repro_Instant_Actions_Widget
             return;
         }
 
-        $biz_name    = $this->get_setting('business_name', get_bloginfo('name'));
-        $lead_name   = ! empty($lead['name']) ? trim($lead['name']) : '';
-        $lead_email  = ! empty($lead['email']) ? trim($lead['email']) : '';
+        $biz_name   = $this->get_setting('business_name', get_bloginfo('name'));
+        $lead_name  = ! empty($lead['name'])  ? trim($lead['name'])  : '';
+        $lead_email = ! empty($lead['email']) ? trim($lead['email']) : '';
 
-        // Build subject: "[Business] New Chat Lead – Name <email>"
+        // Subject: "[Business] New Chat Lead – Name <email>"
         $identity = '';
         if ($lead_name !== '' && $lead_email !== '') {
             $identity = ' – ' . $lead_name . ' <' . $lead_email . '>';
@@ -5254,40 +5254,31 @@ final class Carbon_Repro_Instant_Actions_Widget
         }
         $subject = sprintf(__('[%s] New Chat Lead', 'carbon-repro-widget'), $biz_name) . $identity;
 
-        $sep = str_repeat('─', 40);
-
         $message = array(
             __('A new visitor started a chat in the widget.', 'carbon-repro-widget'),
             '',
-            $sep,
-            strtoupper(__('Lead Details', 'carbon-repro-widget')),
-            $sep,
-            __('Name:  ', 'carbon-repro-widget') . ($lead_name  !== '' ? $lead_name  : '—'),
-            __('Email: ', 'carbon-repro-widget') . ($lead_email !== '' ? $lead_email : '—'),
-            __('Phone: ', 'carbon-repro-widget') . (! empty($lead['phone'])       ? $lead['phone']       : '—'),
-            __('Need:  ', 'carbon-repro-widget') . (! empty($lead['looking_for']) ? $lead['looking_for'] : '—'),
+            __('Lead Details', 'carbon-repro-widget'),
+            __('Name:', 'carbon-repro-widget')  . '     ' . ($lead_name  !== '' ? $lead_name  : '—'),
+            __('Email:', 'carbon-repro-widget') . '    ' . ($lead_email !== '' ? $lead_email : '—'),
+            __('Phone:', 'carbon-repro-widget') . '    ' . (! empty($lead['phone'])       ? $lead['phone']       : '—'),
+            __('Need:', 'carbon-repro-widget')  . '     ' . (! empty($lead['looking_for']) ? $lead['looking_for'] : '—'),
             '',
-            $sep,
-            strtoupper(__('Session Info', 'carbon-repro-widget')),
-            $sep,
-            __('Business: ', 'carbon-repro-widget') . $biz_name,
-            __('Page:     ', 'carbon-repro-widget') . (isset($meta['page_url'])      ? $meta['page_url']      : '—'),
-            __('Source:   ', 'carbon-repro-widget') . (isset($meta['source_group'])  ? $meta['source_group']  : '—'),
-            __('Device:   ', 'carbon-repro-widget') . (isset($meta['device_type'])   ? $meta['device_type']   : '—'),
-            __('Country:  ', 'carbon-repro-widget') . (isset($meta['country_name'])  ? $meta['country_name']  : '—'),
-            '',
-            $sep,
-            strtoupper(__('Conversation', 'carbon-repro-widget')),
-            $sep,
+            __('Session Info', 'carbon-repro-widget'),
+            __('Business:', 'carbon-repro-widget') . ' ' . $biz_name,
+            __('Page:', 'carbon-repro-widget')     . '     ' . (isset($meta['page_url'])     ? $meta['page_url']     : '—'),
+            __('Source:', 'carbon-repro-widget')   . '   ' . (isset($meta['source_group'])  ? $meta['source_group'] : '—'),
+            __('Device:', 'carbon-repro-widget')   . '   ' . (isset($meta['device_type'])   ? $meta['device_type']  : '—'),
+            __('Country:', 'carbon-repro-widget')  . '  ' . (isset($meta['country_name'])  ? $meta['country_name'] : '—'),
         );
 
         $transcript = get_post_meta($conversation_id, '_criaw_transcript', true);
         $transcript = is_array($transcript) ? $transcript : array();
         if (! empty($transcript[0]['content'])) {
-            $message[] = __('Started with: ', 'carbon-repro-widget') . $transcript[0]['content'];
+            $message[] = '';
+            $message[] = __('Conversation started with:', 'carbon-repro-widget') . ' ' . $transcript[0]['content'];
         }
-        $message[] = __('Admin link:   ', 'carbon-repro-widget') . admin_url('admin.php?page=carbon-repro-widget-conversations&conversation_id=' . $conversation_id);
-        $message[] = $sep;
+        $message[] = '';
+        $message[] = __('Conversation:', 'carbon-repro-widget') . ' ' . admin_url('admin.php?page=carbon-repro-widget-conversations&conversation_id=' . $conversation_id);
 
         $sent = wp_mail($email, $subject, implode("\n", $message));
         $this->append_notification_timeline(
