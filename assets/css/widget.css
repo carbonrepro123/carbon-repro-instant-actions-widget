@@ -667,7 +667,33 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
   gap: 10px;
 }
 
-.watch-chat-typing { opacity: 0.65; font-style: italic; }
+.watch-chat-typing .watch-chat-bubble {
+  padding: 10px 16px;
+  min-width: 54px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.watch-chat-typing .watch-chat-bubble::before,
+.watch-chat-typing .watch-chat-bubble::after,
+.watch-chat-typing .watch-chat-bubble span.watch-typing-text {
+  display: none;
+}
+.watch-chat-typing .watch-chat-bubble .watch-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.4;
+  animation: watch-typing-dot 1.2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+.watch-chat-typing .watch-chat-bubble .watch-dot:nth-child(2) { animation-delay: 0.2s; }
+.watch-chat-typing .watch-chat-bubble .watch-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes watch-typing-dot {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30%            { opacity: 1;    transform: translateY(-4px); }
+}
 
 /* --------------------------------------------------------------------------
    16. Product cards (grid, no horizontal scroll)

@@ -1719,7 +1719,7 @@ final class Carbon_Repro_Instant_Actions_Widget
             array(
                 'conversation_id' => $conversation_id,
                 'lead' => $lead,
-                'reply' => $reply,
+                'reply' => $this->sanitize_reply($reply),
                 'catalog_cards' => isset($assistant_meta['catalog_cards']) ? $assistant_meta['catalog_cards'] : array(),
                 'catalog_links' => isset($assistant_meta['catalog_links']) ? $assistant_meta['catalog_links'] : array(),
                 'contact_actions' => isset($assistant_meta['contact_actions']) ? $assistant_meta['contact_actions'] : array(),
@@ -1979,7 +1979,7 @@ final class Carbon_Repro_Instant_Actions_Widget
         wp_send_json_success(
             array(
                 'conversation_id' => $conversation_id,
-                'reply' => $result['reply'],
+                'reply' => $this->sanitize_reply($result['reply']),
                 'lead' => $lead,
                 'human_takeover' => false,
                 'catalog_cards' => isset($assistant_meta['catalog_cards']) ? $assistant_meta['catalog_cards'] : array(),
@@ -3502,7 +3502,7 @@ final class Carbon_Repro_Instant_Actions_Widget
         if (! empty($contact['phone'])) {
             $actions[] = array(
                 'type' => 'call',
-                'label' => __('Call Store', 'carbon-repro-widget'),
+                'label' => __('Call Showroom', 'carbon-repro-widget'),
                 'url' => 'tel:' . $contact['phone'],
             );
         }
@@ -3510,7 +3510,7 @@ final class Carbon_Repro_Instant_Actions_Widget
         if (! empty($contact['email'])) {
             $actions[] = array(
                 'type' => 'email',
-                'label' => __('Email Store', 'carbon-repro-widget'),
+                'label' => __('Email Showroom', 'carbon-repro-widget'),
                 'url' => 'mailto:' . $contact['email'],
             );
         }
@@ -3526,15 +3526,27 @@ final class Carbon_Repro_Instant_Actions_Widget
         return $actions;
     }
 
+    private function sanitize_reply($reply)
+    {
+        $reply = html_entity_decode((string) $reply, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        // Strip full URLs
+        $reply = preg_replace('/https?:\/\/\S+/i', '', $reply);
+        // Strip orphaned URL query strings left behind after URL stripping (e.g. &g_ep=Egoy...%3D)
+        $reply = preg_replace('/(?:&amp;|&#0*38;|&)[a-zA-Z0-9_%-]+=\S*/u', '', $reply);
+        // Strip standalone percent-encoded blobs (e.g. %3D%3D, EgoyMDI1... remnants)
+        $reply = preg_replace('/\b(?:[A-Za-z0-9+\/]{20,}={0,2}|(?:%[0-9A-Fa-f]{2}){3,})\b/', '', $reply);
+        $reply = preg_replace('/\n{3,}/', "\n\n", $reply);
+        return trim($reply);
+    }
+
     private function clean_reply_contact_block($reply)
     {
         $reply = preg_replace('/(?:^|\n)\s*[-*]\s*\*{0,2}(phone|email|location)\*{0,2}\s*:\s*[^\n]+/i', '', (string) $reply);
         $reply = preg_replace('/(?:^|\n)\s*[-*]\s*\*{0,2}(map|directions?)\*{0,2}\s*:\s*[^\n]+/i', '', (string) $reply);
         $reply = preg_replace('/(?:^|\n)\s*(phone|email|location|map|directions?)\s*:\s*[^\n]+/i', '', (string) $reply);
-        $reply = preg_replace('/https?:\/\/[^\s<>"\']+/i', '', (string) $reply);
         $reply = preg_replace('/\bthanks again,[^\n]+/i', '', (string) $reply);
         $reply = preg_replace('/\byou can also contact the store directly using the details below:\s*/i', '', (string) $reply);
-        $reply = preg_replace('/\n{3,}/', "\n\n", (string) $reply);
+        $reply = $this->sanitize_reply($reply);
 
         return trim((string) $reply);
     }
@@ -4045,10 +4057,6 @@ final class Carbon_Repro_Instant_Actions_Widget
         if (! empty($contact['email'])) {
             $lines[] = 'Email: ' . $contact['email'];
         }
-        if (! empty($contact['location_url'])) {
-            $lines[] = 'Directions: ' . esc_url($contact['location_url']);
-        }
-
         if (empty($lines)) {
             return __('Sure! I can help with store details. Use the contact buttons below to reach us directly.', 'carbon-repro-widget');
         }

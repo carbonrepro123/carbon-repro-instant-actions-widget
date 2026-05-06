@@ -1101,11 +1101,20 @@
     var textNode = document.createElement('div');
     var richNode = null;
 
-    row.className = 'watch-chat-message-row watch-chat-message-row-' + role;
-    bubble.className = 'watch-chat-bubble watch-chat-bubble-' + role + (extraClass ? ' ' + extraClass : '');
-    textNode.className = 'watch-chat-message-text';
-    textNode.textContent = text || '';
-    bubble.appendChild(textNode);
+    var isTyping = extraClass === 'watch-chat-typing';
+    row.className = 'watch-chat-message-row watch-chat-message-row-' + role + (isTyping ? ' watch-chat-typing' : '');
+    bubble.className = 'watch-chat-bubble watch-chat-bubble-' + role;
+    if (isTyping) {
+      [1, 2, 3].forEach(function () {
+        var dot = document.createElement('span');
+        dot.className = 'watch-dot';
+        bubble.appendChild(dot);
+      });
+    } else {
+      textNode.className = 'watch-chat-message-text';
+      textNode.textContent = text || '';
+      bubble.appendChild(textNode);
+    }
     row.appendChild(bubble);
 
     if (role === 'assistant') {
@@ -1468,11 +1477,30 @@
     payload.append('sms_updates_opt_in', elements.chatSmsConsent && elements.chatSmsConsent.checked ? '1' : '0');
     payload.append('whatsapp_updates_opt_in', elements.chatWhatsappConsent && elements.chatWhatsappConsent.checked ? '1' : '0');
 
+    // Immediately switch to chat view and show typing indicator
+    var elementsEarly = getElements();
+    if (elementsEarly.chatMessages) {
+      elementsEarly.chatMessages.innerHTML = '';
+    }
+    toggleIntake(false);
+    chatState.isChatStarted = true;
+    applyChatUiState();
+    if (lead.looking_for) {
+      addChatMessage('user', lead.looking_for);
+    }
+    var typingBubble = addChatMessage('assistant', strings.thinking || 'Typing...', 'watch-chat-typing');
+
     chatRequestInFlight = true;
     setChatLoading(true);
     postFormData(payload).then(function (data) {
+      if (typingBubble && typingBubble.parentNode) {
+        typingBubble.parentNode.removeChild(typingBubble);
+      }
       if (!data || !data.success || !data.data) {
         showToast((data && data.data && data.data.message) || strings.error || 'Unable to start chat.');
+        toggleIntake(true);
+        chatState.isChatStarted = false;
+        applyChatUiState();
         return;
       }
 
@@ -1488,14 +1516,6 @@
         messages: [],
         lead: getStoredLead()
       });
-      var elementsNow = getElements();
-      if (elementsNow.chatMessages) {
-        elementsNow.chatMessages.innerHTML = '';
-      }
-      toggleIntake(false);
-      if (lead.looking_for) {
-        addChatMessage('user', lead.looking_for);
-      }
       addAssistantReply(data.data.reply || welcomeMessage, '', {
         catalogCards: data.data.catalog_cards || [],
         catalogLinks: data.data.catalog_links || [],
@@ -1503,10 +1523,14 @@
       });
       startChatPolling();
     }).catch(function () {
+      if (typingBubble && typingBubble.parentNode) {
+        typingBubble.parentNode.removeChild(typingBubble);
+      }
       showToast(strings.error || 'Unable to start chat.');
     }).finally(function () {
       chatRequestInFlight = false;
       setChatLoading(false);
+      applyChatUiState();
     });
   }
 
