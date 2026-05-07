@@ -53,13 +53,9 @@ html[data-widget-hidden="true"] .watch-chat-popup {
   transition: bottom 0.3s ease;
 }
 
-/* Back-to-top coexistence */
-.lqd-back-to-top.is-visible {
-  z-index: 99990 !important;
-}
-body:has(.lqd-back-to-top.is-visible) #watchWidget {
-  bottom: calc(24px + 56px + 16px);
-}
+/* Back-to-top coexistence — z-index only; bottom offset managed by JS */
+.lqd-back-to-top { z-index: 99990 !important; }
+#watchWidget { transition: bottom 0.25s ease; }
 
 /* --------------------------------------------------------------------------
    4. Pointer-events unlock for interactive children
@@ -1231,7 +1227,6 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
    -------------------------------------------------------------------------- */
 @media (max-width: 800px) {
   #watchWidget { bottom: 18px; right: 18px; }
-  body:has(.lqd-back-to-top.is-visible) #watchWidget { bottom: calc(18px + 48px + 12px); }
 
   .watch-menu,
   .watch-form-popup,
@@ -1250,7 +1245,6 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
   #watchWidget { bottom: 16px; right: 16px; }
-  body:has(.lqd-back-to-top.is-visible) #watchWidget { bottom: calc(16px + 48px + 12px); }
 
   .watch-menu,
   .watch-form-popup,
@@ -1285,7 +1279,6 @@ body:has(.lqd-back-to-top.is-visible) #watchWidget {
    -------------------------------------------------------------------------- */
 @media (max-width: 480px) {
   #watchWidget { bottom: 14px; right: 14px; }
-  body:has(.lqd-back-to-top.is-visible) #watchWidget { bottom: calc(14px + 44px + 10px); }
 
   /* Menu & form: near-fullscreen floating panel */
   .watch-menu,

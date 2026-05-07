@@ -1829,6 +1829,54 @@
     document.addEventListener('lity:open', function () {
       closeWidget();
     });
+
+    // Shift widget up when any scroll-to-top button is visible in the bottom-right corner
+    (function () {
+      var w = document.getElementById('watchWidget');
+      if (!w) { return; }
+      var sel = [
+        '#back-to-top', '.back-to-top', '.back_to_top', '.backToTop',
+        '#scroll-top', '.scroll-top', '.scroll_top', '.scrollTop',
+        '#scrollup', '.scrollup', '.scroll-up', '.scrollUp',
+        '#go-top', '.go-top', '.gotop', '.go_top',
+        '#to-top', '.to-top', '.totop', '.toTop',
+        '#backtotop', '.backtotop',
+        '#scrollToTop', '.scrollToTop',
+        '#scroll-to-top', '.scroll-to-top',
+        '.lqd-back-to-top', '.eael-scroll-to-top-button', '.uagb-scroll-top'
+      ].join(',');
+
+      var ticking = false;
+      function adjust() {
+        ticking = false;
+        var extra = 0;
+        try {
+          document.querySelectorAll(sel).forEach(function (el) {
+            var cs = window.getComputedStyle(el);
+            if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) { return; }
+            var r = el.getBoundingClientRect();
+            if (r.width > 0 && r.height > 0 && r.right > window.innerWidth * 0.4) {
+              extra = Math.max(extra, (window.innerHeight - r.top) + 8);
+            }
+          });
+        } catch (e) {}
+        w.style.bottom = extra > 0 ? extra + 'px' : '';
+      }
+
+      function requestAdjust() {
+        if (!ticking) { ticking = true; window.requestAnimationFrame(adjust); }
+      }
+
+      window.addEventListener('scroll', requestAdjust, { passive: true });
+      try {
+        new window.MutationObserver(requestAdjust).observe(document.body, {
+          attributes: true, childList: true, subtree: true,
+          attributeFilter: ['class', 'style']
+        });
+      } catch (e) {}
+      adjust();
+      setTimeout(adjust, 800);
+    }());
   });
 
   /* Resize listener removed: closing panels on resize broke mobile UX because
