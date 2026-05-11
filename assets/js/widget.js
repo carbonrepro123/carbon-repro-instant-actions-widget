@@ -1647,6 +1647,7 @@
         catalogLinks: data.data.catalog_links || [],
         contactActions: data.data.contact_actions || []
       });
+      syncCurrentSessionFromDom();
       pendingUploads = [];
       renderPendingUploads();
       if (elements.chatUploadStatus) {
